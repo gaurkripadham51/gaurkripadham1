@@ -5,28 +5,28 @@ const festivals = [
   {
     name: 'Upcomings Katha',
     date: 'In year 2025',
-    image: '#',
+    image: 'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
     description:
       "Celebration of Lord Krishna's appearance day with abhishek, cultural programs, and midnight aarti.",
   },
   {
     name: 'Janmashtami',
     date: 'August 2025',
-    image: '#',
+    image: 'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
     description:
       "Celebration of Lord Krishna's appearance day with abhishek, cultural programs, and midnight aarti.",
   },
   {
     name: 'Gaura Purnima',
     date: 'March 2025',
-    image: '#',
+    image: 'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
     description:
       'Festival celebrating the appearance of Sri Chaitanya Mahaprabhu.',
   },
   {
     name: 'Rama Navami',
     date: 'April 2025',
-    image: '#',
+    image: 'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
     description:
       "Celebration of Lord Rama's appearance day with special prayers and cultural events.",
   },
