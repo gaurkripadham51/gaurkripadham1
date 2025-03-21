@@ -4,6 +4,7 @@ import About from '../components/About';
 import YoutubeLive from '../components/YoutubeLive';
 import Services from '../components/Services';
 import Gallery from '../components/Gallery';
+import ChatBot from '../components/chatbot'
 
 const Home = () => {
   return (
@@ -14,6 +15,7 @@ const Home = () => {
         <Services className="mb-10 p-6 bg-white shadow-lg rounded-lg" />
         <Gallery className="p-6 bg-white shadow-lg rounded-lg" />
         <YoutubeLive className="p-6 bg-white shadow-lg rounded-lg" />
+        <ChatBot/>
       </div>
     </div>
   );

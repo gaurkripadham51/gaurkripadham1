@@ -27,14 +27,22 @@ const Navbar = () => {
     <nav className="bg-orange-600 fixed w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
+          {/* Logo and Text */}
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() => handleNavigation('/')}
+          >
             <img
-              onClick={() => handleNavigation('/')}
-              className="h-12 w-auto transition-transform duration-500 transform hover:scale-110 cursor-pointer"
+              className="h-12 w-auto transition-transform duration-500 transform hover:scale-110"
               src="https://i.ibb.co/5hfwjfL5/logo.png"
               alt="Gaur Kripa Dham"
             />
+            <span className="text-white font-bold text-lg hover:scale-105 transition-transform duration-300">
+              Gaur Kripa Dham
+            </span>
           </div>
+
+          {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {navItems.map((item) => (
@@ -48,6 +56,8 @@ const Navbar = () => {
               ))}
             </div>
           </div>
+
+          {/* Mobile Menu Toggle */}
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -59,6 +69,7 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Mobile Navigation */}
       {isOpen && (
         <div className="md:hidden transition-opacity duration-500 ease-in-out opacity-100">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
