@@ -22,10 +22,10 @@ const Footer = () => {
         >
           <motion.div whileHover={{ scale: 1.05 }}>
             <h3 className="text-xl font-semibold mb-4 text-orange-400">
-              About Gaur Kirpa Dham
+              About Gaur Kripa Dham
             </h3>
             <p className="text-gray-400">
-              Gaur Kirpa Dham is dedicated to spreading Krishna Consciousness
+              Gaur Kripa Dham is dedicated to spreading Krishna Consciousness
               and serving the community through various spiritual and social
               initiatives.
             </p>
@@ -41,7 +41,7 @@ const Footer = () => {
               </p>
               <p className="flex items-center text-gray-400">
                 <Mail size={20} className="mr-2 text-orange-400" />
-                gaurkirpadham@gmail.com
+                gaurkripadham@gmail.com
               </p>
               <p className="flex items-center text-gray-400">
                 <MapPin size={20} className="mr-2 text-orange-400" />
@@ -87,7 +87,7 @@ const Footer = () => {
           transition={{ delay: 0.5, duration: 1 }}
         >
           <p className="text-gray-400">
-            © 2025 Gaur Kirpa Dham, Vrindavan. All rights reserved.
+            © 2025 Gaur Kripa Dham, Vrindavan. All rights reserved.
           </p>
         </motion.div>
       </div>

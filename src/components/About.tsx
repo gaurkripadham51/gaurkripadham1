@@ -12,7 +12,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            About Gaur Kirpa Dham
+            About Gaur Kripa Dham
           </motion.h2>
           <motion.div
             className="w-20 h-1 bg-orange-600 mx-auto"
@@ -39,7 +39,7 @@ const About = () => {
             transition={{ duration: 1 }}
           >
             <p className="text-gray-600 text-lg mb-6">
-              Gaur Kirpa Dham is dedicated to spreading the message of
+              Gaur Kripa Dham is dedicated to spreading the message of
               Bhagavad-gita and promoting spiritual life based on the teachings
               of Lord Krishna and Lord Chaityna Mahaprabhu. Our temple serves as
               a spiritual sanctuary for devotees and visitors alike.

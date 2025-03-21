@@ -32,7 +32,7 @@ const Navbar = () => {
               onClick={() => handleNavigation('/')}
               className="h-12 w-auto transition-transform duration-500 transform hover:scale-110 cursor-pointer"
               src="https://i.ibb.co/5hfwjfL5/logo.png"
-              alt="Gaur Kirpa Dham"
+              alt="Gaur Kripa Dham"
             />
           </div>
           <div className="hidden md:block">

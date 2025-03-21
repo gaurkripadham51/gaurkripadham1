@@ -26,7 +26,7 @@ const Hero = () => {
       <div className="relative h-[90vh] flex-grow-0">
         <img
           src={images[currentIndex]}
-          alt="Gaur Kirpa Dham"
+          alt="Gaur Kripa Dham"
           className="w-full h-full object-cover object-center transition-all duration-500 ease-in-out"
         />
         <div className="absolute inset-0 flex items-center justify-between px-8">
@@ -48,7 +48,7 @@ const Hero = () => {
       {/* Text section with extra margin to prevent overlap */}
       <div className="relative text-center text-white px-4 py-8 bg-orange-500 bg-opacity-80 mb-10">
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Welcome to Gaur Kirpa Dham
+          Welcome to Gaur Kripa Dham
         </h1>
         <p className="text-xl md:text-2xl">
           Serving the Divine through Devotion and Service
