@@ -12,6 +12,7 @@ const Navbar = () => {
     { path: '/festivals', label: 'Festivals' },
     { path: '/programs', label: 'Programs' },
     { path: '/donations', label: 'Donations' },
+    { path: '/InitiationForm', label: 'InitiationDevoteesDetails' }
   ];
 
   const handleNavigation = (path) => {

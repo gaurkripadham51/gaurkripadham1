@@ -8,6 +8,7 @@ import Festivals from './pages/Festivals';
 import Donations from './pages/Donations';
 import Programs from './pages/Programs';
 import AdminPanel from './pages/adminPanel';
+import InitiationForm from './pages/InitiationForm';
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/donations" element={<Donations />} />
           <Route path="/programs" element={<Programs />} />
           <Route path="/admintesting1234" element={<AdminPanel />} />
+          <Route path="/InitiationForm" element={<InitiationForm />} />
         </Routes>
         <Footer />
       </div>
