@@ -7,6 +7,7 @@ import Schedule from './pages/Schedule';
 import Festivals from './pages/Festivals';
 import Donations from './pages/Donations';
 import Programs from './pages/Programs';
+import AdminPanel from './pages/adminPanel';
 
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route path="/festivals" element={<Festivals />} />
           <Route path="/donations" element={<Donations />} />
           <Route path="/programs" element={<Programs />} />
+          <Route path="/admintesting1234" element={<AdminPanel />} />
         </Routes>
         <Footer />
       </div>

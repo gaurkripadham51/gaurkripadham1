@@ -5,6 +5,8 @@ import YoutubeLive from '../components/YoutubeLive';
 import Services from '../components/Services';
 import Gallery from '../components/Gallery';
 import ChatBot from '../components/chatbot'
+import EkadashiPanel from '../components/EkadashiPanel';
+import WelcomeOverlay from '../components/WelcomeOverlay';
 
 const Home = () => {
   return (
@@ -16,6 +18,8 @@ const Home = () => {
         <Gallery className="p-6 bg-white shadow-lg rounded-lg" />
         <YoutubeLive className="p-6 bg-white shadow-lg rounded-lg" />
         <ChatBot/>
+        <EkadashiPanel/>
+        <WelcomeOverlay/>
       </div>
     </div>
   );
