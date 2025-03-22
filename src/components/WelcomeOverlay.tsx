@@ -95,7 +95,7 @@ const WelcomeOverlay = () => {
       <img
         src="https://i.ibb.co/hJgS3gpz/birthday.jpg"
         alt="Welcome"
-        className="z-30 w-64 sm:w-96 md:w-[450px] h-auto object-contain drop-shadow-2xl rounded-3xl border-4 border-yellow-400"
+        className="z-30 w-64 sm:w-96 md:w-[650px] h-auto object-contain drop-shadow-2xl rounded-3xl border-4 border-yellow-400 opacity-100"
       />
     </div>
   );
