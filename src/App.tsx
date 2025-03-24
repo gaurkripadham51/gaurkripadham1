@@ -9,7 +9,8 @@ import Donations from './pages/Donations';
 import Programs from './pages/Programs';
 import AdminPanel from './pages/adminPanel';
 import InitiationForm from './pages/InitiationForm';
-
+import DevoteeList from './pages/DevoteeList';
+import EkadashiKirtanList from './pages/EkadashiKirtanList';
 
 function App() {
   return (
@@ -24,6 +25,8 @@ function App() {
           <Route path="/programs" element={<Programs />} />
           <Route path="/admintesting1234" element={<AdminPanel />} />
           <Route path="/InitiationForm" element={<InitiationForm />} />
+          <Route path="/DevoteeList" element={<DevoteeList />} />
+          <Route path="/EkadashiKirtanList" element={<EkadashiKirtanList />} />
         </Routes>
         <Footer />
       </div>
