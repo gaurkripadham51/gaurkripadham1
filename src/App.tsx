@@ -11,6 +11,10 @@ import AdminPanel from './pages/adminPanel';
 import InitiationForm from './pages/InitiationForm';
 import DevoteeList from './pages/DevoteeList';
 import EkadashiKirtanList from './pages/EkadashiKirtanList';
+import BhajanList from './pages/BhajanList';
+import BookList from './pages/BookList';
+import BookIndex from './pages/BookIndex';
+import PageText from './pages/PageText';
 
 function App() {
   return (
@@ -27,6 +31,10 @@ function App() {
           <Route path="/InitiationForm" element={<InitiationForm />} />
           <Route path="/DevoteeList" element={<DevoteeList />} />
           <Route path="/EkadashiKirtanList" element={<EkadashiKirtanList />} />
+          <Route path="/bhajanlist" element={<BhajanList />} />
+          <Route path="/books" element={<BookList />} />
+        <Route path="/book/:bookId" element={<BookIndex />} />
+        <Route path="/book/:bookId/page/:pageId" element={<PageText />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />

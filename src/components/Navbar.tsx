@@ -14,6 +14,9 @@ const Navbar = () => {
     { path: '/programs', label: 'Programs' },
     { path: '/donations', label: 'Donations' },
     { path: '/EkadashiKirtanList', label: 'Ekadashi Kirtan List' },
+    { path: '/bhajanlist', label: 'Bhajan List' },
+    { path: '/books', label: 'Prakshit Granth' },
+    
   ];
 
   const devoteeSubItems = [
