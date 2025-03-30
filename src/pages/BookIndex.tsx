@@ -26,7 +26,7 @@ const BookIndex: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [allBooks, setAllBooks] = useState<Book[]>([]);
   const [fontSize, setFontSize] = useState("text-base");
-  const [navLoading, setNavLoading] = useState(false); // 🆕 for next/prev loader
+  const [navLoading, setNavLoading] = useState(false);
 
   const loadBookData = async () => {
     const storedBooks = JSON.parse(localStorage.getItem("allBooks") || "[]");
@@ -34,28 +34,48 @@ const BookIndex: React.FC = () => {
 
     let retries = 0;
     const maxRetries = 10;
+    let bookData: any = null;
 
     while (retries < maxRetries) {
       const rawBookData = localStorage.getItem(`bookData-${bookId}`);
       if (rawBookData) {
         try {
-          const bookData = JSON.parse(rawBookData);
-          setIndexList(bookData.index || []);
-          const bookFromAll = storedBooks.find((b) => b.BookID === bookId);
-          setBookTitle(bookFromAll?.Title || bookData.book?.Title || "Untitled Book");
+          const parsed = JSON.parse(rawBookData);
+
+          if (Array.isArray(parsed.index) && parsed.index.length > 0) {
+            bookData = parsed;
+            break;
+          }
         } catch (err) {
           console.error("Failed to parse book data:", err);
-          setBookTitle("Untitled Book");
         }
-        break;
-      } else {
-        retries++;
-        await new Promise((res) => setTimeout(res, 300));
+      }
+
+      retries++;
+      await new Promise((res) => setTimeout(res, 300));
+    }
+
+    if (!bookData) {
+      try {
+        const res = await fetch(`${BOOK_DATA_API}${bookId}`);
+        const data = await res.json();
+        localStorage.setItem(`bookData-${bookId}`, JSON.stringify(data));
+        bookData = data;
+      } catch (err) {
+        console.error("Failed to fetch book data from API:", err);
       }
     }
 
+    if (bookData) {
+      setIndexList(bookData.index || []);
+      const bookFromAll = storedBooks.find((b) => b.BookID === bookId);
+      setBookTitle(bookFromAll?.Title || bookData.book?.Title || "Untitled Book");
+    } else {
+      setBookTitle("Untitled Book");
+    }
+
     setLoading(false);
-    setNavLoading(false); // 🆕 stop loader when data is loaded
+    setNavLoading(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -68,7 +88,7 @@ const BookIndex: React.FC = () => {
   const nextBook = allBooks[currentIndex + 1];
 
   const handleBookChange = async (newBookId: string) => {
-    setNavLoading(true); // 🆕 start loader
+    setNavLoading(true);
     const res = await fetch(`${BOOK_DATA_API}${newBookId}`);
     const data = await res.json();
     localStorage.setItem(`bookData-${newBookId}`, JSON.stringify(data));
@@ -112,38 +132,49 @@ const BookIndex: React.FC = () => {
           {bookTitle}
         </h2>
 
-        {/* Subtitle (kept empty) */}
+        {/* Subtitle */}
         <h3 className="text-xl sm:text-2xl font-bold text-orange-700 text-center mb-10">
           {indexList.length > 0 ? "" : ""}
         </h3>
 
         {/* Index List */}
         {loading ? (
-          <p className="text-center text-gray-600">Loading index...</p>
-        ) : (
-          <div className="grid gap-4 max-w-3xl mx-auto">
-            {indexList.map((item, idx) => (
-              <Link
-                key={item.PageID}
-                to={`/book/${bookId}/page/${item.PageID}`}
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="group opacity-0 animate-fade-in-up"
-                style={{
-                  animationDelay: `${idx * 50}ms`,
-                  animationFillMode: "forwards",
-                }}
-              >
-                <div
-                  className={`bg-orange-50 px-6 py-4 rounded-lg shadow hover:shadow-md border-l-4 border-orange-400 hover:border-orange-600 transition-all duration-200 ${fontSize}`}
-                >
-                  <p className="font-medium text-gray-800 group-hover:text-orange-700">
-                    {idx + 1}. {item.PageTitle}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+  <div className="grid gap-4 max-w-3xl mx-auto">
+    {Array.from({ length: 6 }).map((_, idx) => (
+      <div
+        key={idx}
+        className="bg-orange-100/60 px-6 py-4 rounded-lg animate-pulse shadow"
+      >
+        <div className="h-4 w-3/4 bg-orange-200 rounded mb-2"></div>
+        <div className="h-3 w-1/2 bg-orange-200 rounded"></div>
+      </div>
+    ))}
+  </div>
+) : (
+  <div className="grid gap-4 max-w-3xl mx-auto">
+    {indexList.map((item, idx) => (
+      <Link
+        key={item.PageID}
+        to={`/book/${bookId}/page/${item.PageID}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="group opacity-0 animate-fade-in-up"
+        style={{
+          animationDelay: `${idx * 50}ms`,
+          animationFillMode: "forwards",
+        }}
+      >
+        <div
+          className={`bg-orange-50 px-6 py-4 rounded-lg shadow hover:shadow-md border-l-4 border-orange-400 hover:border-orange-600 transition-all duration-200 ${fontSize}`}
+        >
+          <p className="font-medium text-gray-800 group-hover:text-orange-700">
+            {idx + 1}. {item.PageTitle}
+          </p>
+        </div>
+      </Link>
+    ))}
+  </div>
+)}
+
 
         {/* Back Link */}
         <div className="text-center mt-12">
@@ -167,7 +198,9 @@ const BookIndex: React.FC = () => {
                   : "bg-gray-300 cursor-not-allowed"
               }`}
             >
-              {navLoading && <span className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full"></span>}
+              {navLoading && (
+                <span className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full"></span>
+              )}
               ← {prevBook ? prevBook.Title : "Previous Book"}
             </button>
           </div>
@@ -182,7 +215,9 @@ const BookIndex: React.FC = () => {
                   : "bg-gray-300 cursor-not-allowed"
               }`}
             >
-              {navLoading && <span className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full"></span>}
+              {navLoading && (
+                <span className="h-4 w-4 animate-spin border-2 border-white border-t-transparent rounded-full"></span>
+              )}
               {nextBook ? nextBook.Title : "Next Book"} →
             </button>
           </div>

@@ -27,6 +27,7 @@ const PageText: React.FC = () => {
 
     const stored = localStorage.getItem(`bookData-${bookId}`);
     if (!stored) {
+      console.warn("No book data in localStorage for:", bookId);
       navigate("/books");
       return;
     }
@@ -38,15 +39,37 @@ const PageText: React.FC = () => {
       const book = data.book || {};
 
       setIndexList(index);
-      setBookTitle(book.Title || "Untitled Book");
 
-      let foundPage = pages.find((p) => p.PageID === pageId);
+      // ✅ Improved book title logic
+      const storedAllBooks = localStorage.getItem("allBooks");
+      const allBooks = storedAllBooks ? JSON.parse(storedAllBooks) : [];
 
-      // Fallback if PageText is missing
+      let titleFromData = book?.Title?.trim();
+
+      if (!titleFromData && allBooks?.length > 0) {
+        const matchingBook = allBooks.find((b: any) => b.BookID === bookId);
+        if (matchingBook?.Title) {
+          titleFromData = matchingBook.Title;
+        }
+      }
+
+      if (titleFromData) {
+        setBookTitle(titleFromData);
+      } else {
+        const fallback = index[0]?.PageTitle || "Untitled Book";
+        setBookTitle(fallback);
+      }
+
+      let foundPage = pages.find((p) => p.PageID === pageId) || null;
+
       if (!foundPage || !foundPage.PageText) {
         const indexItem = index.find((p) => p.PageID === pageId);
         if (indexItem) {
-          foundPage = { ...indexItem, PageText: indexItem.PageText || "" };
+          foundPage = {
+            PageID: indexItem.PageID,
+            PageTitle: indexItem.PageTitle,
+            PageText: indexItem.PageText || "",
+          };
 
           const existingIdx = pages.findIndex((p) => p.PageID === pageId);
           if (existingIdx !== -1) {
@@ -55,11 +78,17 @@ const PageText: React.FC = () => {
             pages.push(foundPage);
           }
 
-          // Update localStorage
           localStorage.setItem(
             `bookData-${bookId}`,
             JSON.stringify({ ...data, pages })
           );
+        }
+      }
+
+      if (foundPage && !foundPage.PageTitle) {
+        const indexItem = index.find((p) => p.PageID === pageId);
+        if (indexItem?.PageTitle) {
+          foundPage.PageTitle = indexItem.PageTitle;
         }
       }
 
@@ -86,9 +115,9 @@ const PageText: React.FC = () => {
         Page not found. <br />
         <Link
           to={`/book/${bookId}`}
-          className="text-orange-600 hover:underline font-medium"
+          className="text-orange-600 hover:underline text-sm font-medium"
         >
-          Back to Index
+          📖 Back to {bookTitle || "Book"}
         </Link>
       </div>
     );
