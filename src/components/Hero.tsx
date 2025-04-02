@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 
 const images = [
-  'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
-  'https://i.ibb.co/3VgWMBs/temple-Deity.jpg',
-  'https://i.ibb.co/35xYwLzY/devotees1.jpg',
-  'https://i.ibb.co/jPNGbp74/Maharaji3.jpg',
+  'https://i.ibb.co/Xx7qbWKX/Whats-App-Image-2025-04-01-at-22-04-15.jpg',
+  'https://i.ibb.co/HDnWbKC4/Whats-App-Image-2025-04-01-at-22-04-16.jpg',
+  'https://i.ibb.co/vCK6MdnJ/Whats-App-Image-2025-04-01-at-22-04-17-1.jpg',
+  'https://i.ibb.co/0VR84D79/Whats-App-Image-2025-04-01-at-22-04-17.jpg',
 ];
 
 const Hero = () => {
@@ -48,10 +48,10 @@ const Hero = () => {
       {/* Text section directly below image */}
       <div className="text-center text-white px-4 py-4 bg-orange-500 bg-opacity-90">
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Welcome to Gaur Kripa Dham
+        हिमाचल ज्योतिष केंद्र
         </h1>
         <p className="text-xl md:text-2xl">
-          Serving the Divine through Devotion and Service
+          सम्पूर्ण पूजा पाठ
         </p>
       </div>
     </div>

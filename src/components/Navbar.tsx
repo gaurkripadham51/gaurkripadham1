@@ -13,9 +13,7 @@ const Navbar = () => {
     { path: '/festivals', label: 'Festivals' },
     { path: '/programs', label: 'Programs' },
     { path: '/donations', label: 'Donations' },
-    { path: '/EkadashiKirtanList', label: 'Ekadashi Kirtan List' },
     { path: '/bhajanlist', label: 'Bhajan List' },
-    { path: '/books', label: 'Parkashit Granth' },
     
   ];
 
@@ -40,8 +38,8 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavigation('/')}>
-            <img className="h-12 w-auto hover:scale-110 transition-transform" src="https://i.ibb.co/5hfwjfL5/logo.png" alt="Logo" />
-            <span className="text-white font-bold text-lg hover:scale-105 transition-transform">Gaur Kripa Dham</span>
+            <img className="h-12 w-auto hover:scale-110 transition-transform" src="https://i.ibb.co/HMg30Kh/Whats-App-Image-2025-04-01-at-22-04-18-removebg-preview.png" alt="Logo" />
+            <span className="text-white font-bold text-lg hover:scale-105 transition-transform">Acharya Rajesh Nag Shastri</span>
           </div>
 
           {/* Desktop Menu */}

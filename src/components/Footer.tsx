@@ -22,12 +22,11 @@ const Footer = () => {
         >
           <motion.div whileHover={{ scale: 1.05 }}>
             <h3 className="text-xl font-semibold mb-4 text-orange-400">
-              About Gaur Kripa Dham
+            हिमाचल ज्योतिष केंद्र
             </h3>
             <p className="text-gray-400">
-              Gaur Kripa Dham is dedicated to spreading Krishna Consciousness
-              and serving the community through various spiritual and social
-              initiatives.
+            हमारे पूज्य गुरुजी के मार्गदर्शन में संचालित संपूर्ण ज्योतिष केंद्र आपकी जीवन की समस्याओं का सटीक समाधान प्रदान करता है। 
+            यहां वैदिक ज्योतिष, कुंडली विश्लेषण, ग्रहदोष निवारण, रत्न परामर्श, विवाह मिलान, मुहूर्त निर्धारण, और अन्य ज्योतिषीय सेवाएं उपलब्ध हैं।
             </p>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }}>
@@ -37,15 +36,15 @@ const Footer = () => {
             <div className="space-y-3">
               <p className="flex items-center text-gray-400">
                 <Phone size={20} className="mr-2 text-orange-400" />
-                +91 95409 17385
+                +91 98184 85071
               </p>
               <p className="flex items-center text-gray-400">
                 <Mail size={20} className="mr-2 text-orange-400" />
-                gaurkripadham@gmail.com
+                rajeshnagshastri@gmail.com
               </p>
               <p className="flex items-center text-gray-400">
                 <MapPin size={20} className="mr-2 text-orange-400" />
-                Shri Gaur Kripa Dham, Vrindavan, India, 281121
+                31/8 Sant Nagar Near Rani public school, Burari , Delhi 110084
               </p>
             </div>
           </motion.div>
