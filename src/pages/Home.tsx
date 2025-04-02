@@ -13,8 +13,6 @@ const Home = () => {
         <Services className="mb-10 p-6 bg-white shadow-lg rounded-lg" />
         <Gallery className="p-6 bg-white shadow-lg rounded-lg" />
         <YoutubeLive className="p-6 bg-white shadow-lg rounded-lg" />
-       
-       
       </div>
     </div>
   );
