@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const YoutubeLive = () => {
-  const youtubeLiveUrl = 'https://www.youtube.com/embed/ru2vJP8rSa8';
+  const youtubeLiveUrl = 'https://www.youtube.com/embed/WpaV_k7tIrg&t=26s';
 
   return (
     <motion.div
@@ -17,7 +17,7 @@ const YoutubeLive = () => {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        Live from Gaur Kripa Dham
+        हिमाचल ज्योतिष केंद्र youtube
       </motion.h1>
       <motion.div
         className="relative w-full max-w-3xl aspect-w-16 aspect-h-9 border-2 border-white/50 rounded-lg shadow-md overflow-hidden"

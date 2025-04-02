@@ -6,29 +6,28 @@ const Services = () => {
   const services = [
     {
       icon: <Book className="w-12 h-12 text-orange-600" />,
-      title: 'Spiritual Education',
+      title: 'कुंडली मिलान एवं ज्योतिष परामर्श',
       description:
-        'Regular classes on Bhagavad-gita and other Vedic scriptures',
+        'जन्म कुंडली के आधार पर जीवन के महत्वपूर्ण पहलुओं पर मार्गदर्शन।',
     },
     {
       icon: <Heart className="w-12 h-12 text-orange-600" />,
-      title: 'Prasadam Distribution',
-      description: 'Free distribution of sanctified vegetarian food',
+      title: 'ग्रह दोष निवारण उपाय',
+      description: 'शांति पाठ, रुद्राभिषेक, नवग्रह हवन, महामृत्युंजय जाप आदि।',
     },
     {
       icon: <Users className="w-12 h-12 text-orange-600" />,
-      title: 'Community Programs',
-      description: 'Youth programs, festivals, and cultural celebrations',
+      title: 'रत्न और उपाय परामर्श',
+      description: 'उचित रत्न चयन और धारण करने की विधि।',
     },
     {
       icon: <Music className="w-12 h-12 text-orange-600" />,
-      title: 'Kirtan & Bhajans',
-      description: 'Daily spiritual music and chanting sessions',
-    },
-    {
-      icon: <Heart className="w-12 h-12 text-orange-600" />,
-      title: 'Katha',
-      description: 'Bhagvatam, Shri Bhakatmal Katha',
+      title: 'वास्तु परामर्श',
+      description: 'घर, दुकान एवं व्यवसायिक स्थल के लिए वास्तु समाधान',
+    },{
+      icon: <Music className="w-12 h-12 text-orange-600" />,
+      title: 'श्रीमद्भागवतम् कथा',
+      description: 'भागवत पुराण की कथा करना',
     },
   ];
 
