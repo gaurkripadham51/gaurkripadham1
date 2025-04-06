@@ -37,7 +37,8 @@ const Footer = () => {
             <div className="space-y-3">
               <p className="flex items-center text-gray-400">
                 <Phone size={20} className="mr-2 text-orange-400" />
-                +91 95409 17385
+                +91 95409 17385 , 
+                +91 88511 84484
               </p>
               <p className="flex items-center text-gray-400">
                 <Mail size={20} className="mr-2 text-orange-400" />

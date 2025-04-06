@@ -4,12 +4,12 @@ const EkadashiPanel = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const ekadashi = {
-    title: 'Papankusha Ekadashi',
-    date: 'राधेश्याम जी 🙏🙏 सभी वैष्णवजनों का श्री पापमोचनी एकादशी का व्रत 26 मार्च बुधवार को रहेगा। व्रत का पारण अगले दिन प्रातः 6:20 से 9:45 तक रहेगा।',
+    title: 'Kamda Ekadashi',
+    date: 'राधेश्याम जी 🙏🙏 सभी वैष्णवजनों का श्री कामदा एकादशी का व्रत 08 अप्रैल मंगलवार को रहेगा। व्रत का पारण अगले दिन प्रातः 6:20 से 9:45 तक रहेगा।',
     description:
       'On this sacred Ekadashi, devotees fast and offer prayers to Lord Vishnu. It is believed to cleanse sins and bring spiritual upliftment.',
     image: 'https://i.ibb.co/5hfwjfL5/logo.png',
-    youtube: 'https://www.youtube.com/watch?v=jdo76e0Mg8A',
+    youtube: 'https://www.youtube.com/watch?v=9taSAW5FuKM',
   };
 
   const getYoutubeEmbed = (url: string) => {
