@@ -1,30 +1,30 @@
 import React, { useState } from 'react';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
 
   const navItems = [
     { path: '/', label: 'Home' },
+    /*
     { path: '/schedule', label: 'Schedule' },
     { path: '/festivals', label: 'Festivals' },
     { path: '/programs', label: 'Programs' },
     { path: '/donations', label: 'Donations' },
     { path: '/bhajanlist', label: 'Bhajan List' },
-    
+    */
   ];
 
-  const devoteeSubItems = [
-    { path: '/InitiationForm', label: 'Initiation Form' },
-    { path: '/DevoteeList', label: 'Devotee List' },
-  ];
+  // Devotee items hidden (dropdown removed)
+  // const devoteeSubItems = [
+  //   { path: '/InitiationForm', label: 'Initiation Form' },
+  //   { path: '/DevoteeList', label: 'Devotee List' },
+  // ];
 
   const handleNavigation = (path) => {
     setIsOpen(false);
-    setShowDropdown(false);
     document.body.classList.add('fade-out');
     setTimeout(() => {
       navigate(path);
@@ -38,8 +38,14 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => handleNavigation('/')}>
-            <img className="h-12 w-auto hover:scale-110 transition-transform" src="https://i.ibb.co/HMg30Kh/Whats-App-Image-2025-04-01-at-22-04-18-removebg-preview.png" alt="Logo" />
-            <span className="text-white font-bold text-lg hover:scale-105 transition-transform">Acharya Rajesh Nag Shastri</span>
+            <img
+              className="h-12 w-auto hover:scale-110 transition-transform"
+              src="https://i.ibb.co/HMg30Kh/Whats-App-Image-2025-04-01-at-22-04-18-removebg-preview.png"
+              alt="Logo"
+            />
+            <span className="text-white font-bold text-lg hover:scale-105 transition-transform">
+              Acharya Rajesh Nag Shastri
+            </span>
           </div>
 
           {/* Desktop Menu */}
@@ -53,32 +59,7 @@ const Navbar = () => {
                 {item.label}
               </button>
             ))}
-
-            {/* Devotee Dropdown */}
-            <div
-  className="relative"
-  onMouseEnter={() => setTimeout(() => setShowDropdown(true), 5)}
-  onMouseLeave={() => setTimeout(() => setShowDropdown(false), 5)}
->
-  <button className="flex items-center text-white hover:bg-orange-700 px-3 py-2 rounded-md text-sm font-medium hover:scale-105 transition-transform">
-    Devotees Details
-    <ChevronDown className="ml-1 w-4 h-4" />
-  </button>
-
-  {showDropdown && (
-    <div className="absolute right-0 bg-orange-400/80 text-white rounded shadow-md mt-2 w-56 z-50 backdrop-blur-sm">
-      {devoteeSubItems.map((subItem) => (
-        <button
-          key={subItem.path}
-          onClick={() => handleNavigation(subItem.path)}
-          className="block text-left w-full px-4 py-2 hover:bg-orange-500"
-        >
-          {subItem.label}
-        </button>
-      ))}
-    </div>
-  )}
-</div>
+            {/* 🔻 Devotees Dropdown hidden from desktop */}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -96,30 +77,16 @@ const Navbar = () => {
       {/* Mobile Navigation */}
       {isOpen && (
         <div className="md:hidden bg-orange-600 px-4 pb-4 pt-2 space-y-1">
-          {[...navItems, { label: 'Devotees Details', path: null }].map((item) =>
-            item.path ? (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                className="text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-orange-700"
-              >
-                {item.label}
-              </button>
-            ) : (
-              <div key="devotee-sub" className="text-white font-semibold mt-2">Devotees Details</div>
-            )
-          )}
-
-          {/* Mobile Submenu */}
-          {devoteeSubItems.map((sub) => (
+          {navItems.map((item) => (
             <button
-              key={sub.path}
-              onClick={() => handleNavigation(sub.path)}
-              className="text-white block w-full text-left px-6 py-2 rounded-md text-sm hover:bg-orange-500 bg-orange-400/80"
+              key={item.path}
+              onClick={() => handleNavigation(item.path)}
+              className="text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium hover:bg-orange-700"
             >
-              {sub.label}
+              {item.label}
             </button>
           ))}
+          {/* 🔻 Devotees section hidden from mobile */}
         </div>
       )}
     </nav>
@@ -128,7 +95,7 @@ const Navbar = () => {
 
 export default Navbar;
 
-// Inject fade-out CSS (or move to a global CSS file)
+// 🔧 Inject fade-out transition style
 document.body.insertAdjacentHTML(
   'beforeend',
   `<style>
