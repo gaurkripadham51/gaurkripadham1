@@ -7,14 +7,15 @@ import Schedule from './pages/Schedule';
 import Festivals from './pages/Festivals';
 import Donations from './pages/Donations';
 import Programs from './pages/Programs';
-import AdminPanel from './pages/adminPanel';
 import InitiationForm from './pages/InitiationForm';
 import DevoteeList from './pages/DevoteeList';
+import GuruPurnimaRegistrationForm from './pages/GuruPurnimaRegistrationForm';
 import EkadashiKirtanList from './pages/EkadashiKirtanList';
 import BhajanList from './pages/BhajanList';
 import BookList from './pages/BookList';
 import BookIndex from './pages/BookIndex';
 import PageText from './pages/PageText';
+import AdminPanel from './pages/AdminPanel';
 
 function App() {
   return (
@@ -27,8 +28,9 @@ function App() {
           <Route path="/festivals" element={<Festivals />} />
           <Route path="/donations" element={<Donations />} />
           <Route path="/programs" element={<Programs />} />
-          <Route path="/admintesting1234" element={<AdminPanel />} />
+          <Route path="/AdminPanel" element={<AdminPanel />} />
           <Route path="/InitiationForm" element={<InitiationForm />} />
+          <Route path="/GuruPurnimaRegistration" element={<GuruPurnimaRegistrationForm />} />
           <Route path="/DevoteeList" element={<DevoteeList />} />
           <Route path="/EkadashiKirtanList" element={<EkadashiKirtanList />} />
           <Route path="/bhajanlist" element={<BhajanList />} />

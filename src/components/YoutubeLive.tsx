@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const YoutubeLive = () => {
-  const youtubeLiveUrl = 'https://www.youtube.com/embed/ru2vJP8rSa8';
+  const youtubeLiveUrl = 'https://www.youtube.com/embed/Av6AI1wyPwk';
 
   return (
     <motion.div
