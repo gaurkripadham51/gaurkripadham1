@@ -16,6 +16,7 @@ import BookList from './pages/BookList';
 import BookIndex from './pages/BookIndex';
 import PageText from './pages/PageText';
 import AdminPanel from './pages/AdminPanel';
+import GuruPurnimaEventRegistrationForm from './pages/GuruPurnimaEventRegistrationForm';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/AdminPanel" element={<AdminPanel />} />
           <Route path="/InitiationForm" element={<InitiationForm />} />
           <Route path="/GuruPurnimaRegistration" element={<GuruPurnimaRegistrationForm />} />
+          <Route path="/GuruPurnimaEventRegistrationForm" element={<GuruPurnimaEventRegistrationForm />} />
           <Route path="/DevoteeList" element={<DevoteeList />} />
           <Route path="/EkadashiKirtanList" element={<EkadashiKirtanList />} />
           <Route path="/bhajanlist" element={<BhajanList />} />

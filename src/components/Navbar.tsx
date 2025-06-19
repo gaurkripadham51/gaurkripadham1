@@ -23,6 +23,7 @@ const Navbar = () => {
     { path: '/InitiationForm', label: 'Initiation Form' },
     { path: '/DevoteeList', label: 'Devotee List' },
     { path: '/GuruPurnimaRegistration', label: 'Registration For Guru Purnima' },
+    { path: '/GuruPurnimaEventRegistrationForm', label: 'Registration For Guru Purnima Kids Event' },
   ];
 
   const handleNavigation = (path: string) => {

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "proxy": "https://script.google.com/macros/s/AKfycbx6D__uT6U8UKW1LvmibqgWgWV4iEI1pnht4eSp62FsMb8iBtID3_ou-z_63GNsHAEE/exec",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
