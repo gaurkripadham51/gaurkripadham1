@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 
 const images = [
-  'https://i.ibb.co/7JZCvtrF/Maharaj-JIImage.jpg',
-  'https://i.ibb.co/3VgWMBs/temple-Deity.jpg',
-  'https://i.ibb.co/35xYwLzY/devotees1.jpg',
-  'https://i.ibb.co/jPNGbp74/Maharaji3.jpg',
+  'https://i.ibb.co/NXRWKwX/bhagwat-katha-09-to-15-hame-page-2.png',
 ];
 
 const Hero = () => {

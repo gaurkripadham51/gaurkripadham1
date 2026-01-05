@@ -6,7 +6,7 @@ const WelcomeOverlay = () => {
 
   // Hide after 5s
   useEffect(() => {
-    const timer = setTimeout(() => setShow(false), 5000);
+    const timer = setTimeout(() => setShow(false), 20000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -93,7 +93,7 @@ const WelcomeOverlay = () => {
 
       {/* Center Image */}
       <img
-        src="https://i.ibb.co/hJgS3gpz/birthday.jpg"
+        src="https://i.ibb.co/hxbBZC8s/Whats-App-Image-2026-01-04-at-22-36-32.jpg"
         alt="Welcome"
         className="z-30 w-64 sm:w-96 md:w-[650px] h-auto object-contain drop-shadow-2xl rounded-3xl border-4 border-yellow-400 opacity-100"
       />
