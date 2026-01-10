@@ -16,6 +16,7 @@ const Navbar = () => {
     { path: '/donations', label: 'Donations' },
     { path: '/EkadashiKirtanList', label: 'Ekadashi Kirtan List' },
     { path: '/bhajanlist', label: 'Bhajan List' },
+    { path: '/ShriNitaiDasJiMaharaj_Playlist', label: 'ShriNitaiDasJiMaharaj' },
     { path: '/books', label: 'Parkashit Granth' },
   ];
 

@@ -17,6 +17,7 @@ import BookIndex from './pages/BookIndex';
 import PageText from './pages/PageText';
 import AdminPanel from './pages/AdminPanel';
 import GuruPurnimaEventRegistrationForm from './pages/GuruPurnimaEventRegistrationForm';
+import ShriNitaiDasJiMaharaj_Playlist from './pages/ShriNitaiDasJiMaharaj_Playlist';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           <Route path="/DevoteeList" element={<DevoteeList />} />
           <Route path="/EkadashiKirtanList" element={<EkadashiKirtanList />} />
           <Route path="/bhajanlist" element={<BhajanList />} />
+          <Route path="/ShriNitaiDasJiMaharaj_Playlist" element={<ShriNitaiDasJiMaharaj_Playlist />} />
           <Route path="/books" element={<BookList />} />
         <Route path="/book/:bookId" element={<BookIndex />} />
         <Route path="/book/:bookId/page/:pageId" element={<PageText />} />
