@@ -46,7 +46,7 @@ const BookList: React.FC = () => {
     <div className="min-h-screen bg-orange-50 px-4 sm:px-6 lg:px-12 pt-24">
       {/* Title */}
       <h1 className="text-4xl sm:text-5xl font-bold text-center text-orange-800 mb-12">
-        Gaur Kripa Dham Parkashit Granth
+      Shri Sankat Mochan Balaji Mandal (Regd.) Parkashit Granth
       </h1>
 
       {/* Filters */}

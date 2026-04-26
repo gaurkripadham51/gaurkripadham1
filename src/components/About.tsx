@@ -12,7 +12,7 @@ const About = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            About Gaur Kripa Dham
+            About Shri Sankat Mochan Balaji Mandal (Regd.)
           </motion.h2>
           <motion.div
             className="w-20 h-1 bg-orange-600 mx-auto"
@@ -28,7 +28,7 @@ const About = () => {
             transition={{ duration: 1 }}
           >
             <img
-              src="https://i.ibb.co/3VgWMBs/temple-Deity.jpg"
+              src="https://i.ibb.co/s97pJqZ9/Image1-2.png"
               alt="Temple Interior"
               className="rounded-lg shadow-xl"
             />
@@ -39,23 +39,21 @@ const About = () => {
             transition={{ duration: 1 }}
           >
             <p className="text-gray-600 text-lg mb-6">
-              Gaur Kripa Dham is dedicated to spreading the message of
-              Bhagavad-gita and promoting spiritual life based on the teachings
-              of Lord Krishna and Lord Chaityna Mahaprabhu. Our temple serves as
-              a spiritual sanctuary for devotees and visitors alike.
+            Shri Sankat Mochan Balaji Mandal started in April, 2010 from Sundar Kand path at Guru ji Hansraj Mehta’s home. After this event, Mandal has been organizing SundarKand Path, Ramanyana Path, Chalisa Path selflessly. 
+            The Mandal has been organizing Shri Hanuman Jayanti Jagran every year around April. Also, the Mandal is doing social work activities such as free health check-up camps, Free tuition for needy students, Ashram at Mehandipur Balaji and some more are in planning.
             </p>
             <p className="text-gray-600 text-lg mb-6">
               We offer various spiritual programs, including daily aartis,
               bhajan sessions, prasadam distribution, and educational programs
               for all age groups.
             </p>
-            <motion.button
+            {/* <motion.button
               className="bg-orange-600 text-white px-6 py-3 rounded-full text-lg font-semibold hover:bg-orange-700 transition duration-300"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
             >
               Learn More
-            </motion.button>
+            </motion.button> */}
           </motion.div>
         </div>
       </div>

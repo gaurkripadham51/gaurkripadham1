@@ -12,7 +12,7 @@ const Home = () => {
   return (
     <>
       {/* Welcome Overlay - shows on every refresh */}
-      <WelcomeOverlay duration={30000} />
+      {/* <WelcomeOverlay duration={30000} /> */}
 
       <div className="bg-gray-100 text-gray-900">
         <Hero className="mb-10" />
@@ -21,8 +21,8 @@ const Home = () => {
           <Services className="mb-10 p-6 bg-white shadow-lg rounded-lg" />
           <Gallery className="p-6 bg-white shadow-lg rounded-lg" />
           <YoutubeLive className="p-6 bg-white shadow-lg rounded-lg" />
-          <ChatBot />
-          <EkadashiPanel />
+          {/* <ChatBot /> */}
+         {/* <EkadashiPanel /> */}
         </div>
       </div>
     </>

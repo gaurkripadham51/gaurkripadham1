@@ -6,24 +6,24 @@ const Programs = () => {
   const programs = [
     {
       icon: <Book className="w-12 h-12 text-orange-600" />,
-      title: 'Bhagavad Gita Classes',
-      schedule: 'Every Monday & Thursday, 6:30 PM',
+      title: 'Yatra To MehndiPur Balaji',
+      schedule: 'Every Third Saturday of Each Month',
       description:
-        'In-depth study and discussion of Bhagavad Gita verses with practical life applications.',
+        'A regular Bus Seva is organized every third Saturday night from Delhi to Mehandipur Balaji, where devotees offer prayers, seek blessings, and have the divine darshan of Lord Balaji Maharaj.',
     },
     {
       icon: <Music className="w-12 h-12 text-orange-600" />,
-      title: 'Kirtan Sessions',
-      schedule: 'Every Saturday, 5:00 PM',
+      title: 'Shri Hanuman ji Jagran',
+      schedule: 'In month of April every Year',
       description:
         'Experience the bliss of devotional music and chanting in community.',
     },
     {
       icon: <Users className="w-12 h-12 text-orange-600" />,
-      title: 'Youth Program',
-      schedule: 'Every Sunday, 4:00 PM',
+      title: 'Sundar Kand Path/Path',
+      schedule: 'Every Tuesday, 6:00 PM',
       description:
-        'Special programs for youth including spiritual discussions, activities, and cultural events.',
+        'Sundar Kand Path and  prayers to Shri Hanuman ji at home every Tuesday..',
     },
     {
       icon: <Star className="w-12 h-12 text-orange-600" />,
@@ -97,7 +97,7 @@ const Programs = () => {
             ))}
           </motion.div>
 
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
@@ -136,7 +136,7 @@ const Programs = () => {
                 </p>
               </motion.div>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
       </div>
     </div>

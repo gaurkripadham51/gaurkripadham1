@@ -22,12 +22,10 @@ const Footer = () => {
         >
           <motion.div whileHover={{ scale: 1.05 }}>
             <h3 className="text-xl font-semibold mb-4 text-orange-400">
-              About Gaur Kripa Dham
+              About Shri Sankat Mochan Balaji Mandal (Regd.)
             </h3>
             <p className="text-gray-400">
-              Gaur Kripa Dham is dedicated to spreading Krishna Consciousness
-              and serving the community through various spiritual and social
-              initiatives.
+            Shri Sankat Mochan Balaji Mandal was established in April 2010 with the divine beginning of a Sundar Kand Path at the residence of Guru Ji Hansraj Mehta. Since then, the Mandal has been devotedly organizing Sundar Kand Path, Ramayan Path, and Chalisa Path with complete selfless service and spiritual dedication.
             </p>
           </motion.div>
           <motion.div whileHover={{ scale: 1.05 }}>
@@ -37,16 +35,16 @@ const Footer = () => {
             <div className="space-y-3">
               <p className="flex items-center text-gray-400">
                 <Phone size={20} className="mr-2 text-orange-400" />
-                +91 95409 17385 , 
-                +91 88511 84484
+                +91 9911055108 , 
+                +91 9811055108
               </p>
               <p className="flex items-center text-gray-400">
                 <Mail size={20} className="mr-2 text-orange-400" />
-                gaurkripadham@gmail.com
+                Hansraj.Mehta@gmail.com
               </p>
               <p className="flex items-center text-gray-400">
                 <MapPin size={20} className="mr-2 text-orange-400" />
-                Shri Gaur Kripa Dham, Vrindavan, India, 281121
+                 Shri Sankat Mochan Balaji Mandal (Regd.), WZ-1771, Ground Floor, Multani Mohalla, Rani Bagh, New Delhi-34
               </p>
             </div>
           </motion.div>
@@ -56,15 +54,15 @@ const Footer = () => {
             </h3>
             <div className="flex space-x-4">
               {[
-                { icon: Facebook, link: 'https://www.facebook.com/GaurdasJi' },
-                { icon: Twitter, link: 'https://x.com/GaurdasJi' },
+                { icon: Facebook, link: 'https://www.facebook.com/shrisankatmochanbalajimandal' },
+                { icon: Twitter, link: '' },
                 {
                   icon: Instagram,
-                  link: 'https://www.instagram.com/shrigaurdasjimaharaj',
+                  link: '',
                 },
                 {
                   icon: Youtube,
-                  link: 'https://www.youtube.com/@ShriGaurdasJiMaharaj',
+                  link: '',
                 },
               ].map((social, index) => (
                 <motion.a
@@ -88,7 +86,7 @@ const Footer = () => {
           transition={{ delay: 0.5, duration: 1 }}
         >
           <p className="text-gray-400">
-            © 2025 Gaur Kripa Dham, Vrindavan. All rights reserved.
+            © 2026 Shri Sankat Mochan Balaji Mandal (Regd.), New Delhi. All rights reserved.
           </p>
         </motion.div>
       </div>

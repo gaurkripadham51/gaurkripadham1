@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
 const images = [
-  'https://i.ibb.co/NXRWKwX/bhagwat-katha-09-to-15-hame-page-2.png',
+  'https://i.ibb.co/ymqQFR0W/main-page.png',
+  'https://i.ibb.co/ymqQFR0W/main-page.png',
 ];
 
 const Hero = () => {
@@ -33,7 +34,7 @@ const Hero = () => {
       >
         <img
           src={images[currentIndex]}
-          alt="Gaur Kripa Dham"
+          alt="Shri Sankat Mochan Balaji Mandal (Regd.)"
           className="
             w-auto
             h-full
@@ -69,7 +70,7 @@ const Hero = () => {
       {/* Text Section */}
       <div className="text-center text-white px-4 py-4 bg-orange-500">
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-3">
-          Welcome to Gaur Kripa Dham
+          Welcome to Shri Sankat Mochan Balaji Mandal (Regd.)
         </h1>
         <p className="text-lg sm:text-xl md:text-2xl">
           Serving the Divine through Devotion and Service

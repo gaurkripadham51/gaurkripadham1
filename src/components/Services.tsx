@@ -5,31 +5,33 @@ import { Book, Heart, Users, Music } from 'lucide-react';
 const Services = () => {
   const services = [
     {
-      icon: <Book className="w-12 h-12 text-orange-600" />,
-      title: 'Spiritual Education',
-      description:
-        'Regular classes on Bhagavad-gita and other Vedic scriptures',
+      icon: <Heart className="w-12 h-12 text-orange-600" />,
+      title: 'Path & Katha',
+      description: 'Sundar Kand Path , Shri Ram Katha ',
     },
+    
     {
       icon: <Heart className="w-12 h-12 text-orange-600" />,
       title: 'Prasadam Distribution',
       description: 'Free distribution of sanctified vegetarian food',
     },
     {
+      icon: <Book className="w-12 h-12 text-orange-600" />,
+      title: 'Bus Seva',
+      description:
+        'Regular Bus Seva to Mehandipur Balaji on every 3rd Saturday of each month.',
+    },
+    {
       icon: <Users className="w-12 h-12 text-orange-600" />,
-      title: 'Community Programs',
-      description: 'Youth programs, festivals, and cultural celebrations',
+      title: 'Free Health Checkup Camp',
+      description: 'Free Health Checkup Camp with specialist consultations and essential health investigations for community welfare.',
     },
     {
       icon: <Music className="w-12 h-12 text-orange-600" />,
       title: 'Kirtan & Bhajans',
       description: 'Daily spiritual music and chanting sessions',
-    },
-    {
-      icon: <Heart className="w-12 h-12 text-orange-600" />,
-      title: 'Katha',
-      description: 'Bhagvatam, Shri Bhakatmal Katha',
-    },
+    }
+  
   ];
 
   return (

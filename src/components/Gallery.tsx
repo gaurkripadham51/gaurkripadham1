@@ -3,12 +3,13 @@ import { motion } from 'framer-motion';
 
 const Gallery = () => {
   const images = [
-    'https://i.ibb.co/MpTrvp2/janamostav.jpg',
-    'https://i.ibb.co/jPNGbp74/Maharaji3.jpg',
-    'https://i.ibb.co/KjnQSMw3/Maharaj-JIImage1.jpg',
-    'https://i.ibb.co/20PtpSdw/gallery2.jpg',
-    'https://i.ibb.co/FqXQHDVS/gallery1.jpg',
-    'https://i.ibb.co/35xYwLzY/devotees1.jpg',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
+    'https://i.ibb.co/s97pJqZ9/Image1-2.png',
   ];
 
   return (
@@ -26,7 +27,7 @@ const Gallery = () => {
             transition={{ duration: 0.6 }}
             className="text-3xl md:text-4xl font-bold text-gray-900 mb-4"
           >
-            Temple Gallery
+            Mandal Gallery
           </motion.h2>
           <motion.div
             initial={{ width: 0 }}
