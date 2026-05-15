@@ -13,7 +13,8 @@ const TokenForm = () => {
     members: "",
   });
 
-  const [token, setToken] = useState("");
+  const [token, setToken] =
+    useState("");
 
   const [loading, setLoading] =
     useState(false);
@@ -32,19 +33,25 @@ const TokenForm = () => {
 
 
 
+  // =========================
+  // API URL
+  // =========================
+
   const API_URL =
     "https://script.google.com/macros/s/AKfycbwdDEh6K3lkLQw3YDetcIibcO5ZXkn7LAwpchKvW2fkn8xU-O9avLt9auf3InsBIm5f/exec";
 
 
 
   // =========================
-  // HANDLE CHANGE
+  // HANDLE INPUT CHANGE
   // =========================
 
   const handleChange = (e) => {
 
-    const { name, value } = e.target;
+    const { name, value } =
+      e.target;
 
+    // ONLY NUMBER FOR MOBILE
     if (
       name === "mobile" &&
       !/^\d*$/.test(value)
@@ -87,10 +94,15 @@ const TokenForm = () => {
       Object.entries(form).forEach(
         ([key, value]) => {
 
-          formData.append(key, value);
+          formData.append(
+            key,
+            value
+          );
 
         }
       );
+
+
 
       const response = await fetch(
         API_URL,
@@ -103,18 +115,24 @@ const TokenForm = () => {
       const data =
         await response.json();
 
+
+
       if (data.success) {
 
-        setToken(data.tokenNumber);
+        setToken(
+          data.tokenNumber
+        );
 
         setShowPopup(true);
 
         // RESET FORM
         setForm({
+
           name: "",
           city: "",
           mobile: "",
           members: "",
+
         });
 
       } else {
@@ -127,7 +145,10 @@ const TokenForm = () => {
     } catch (err) {
 
       console.log(err);
-      alert("Something went wrong");
+
+      alert(
+        "Something went wrong"
+      );
 
     } finally {
 
@@ -145,7 +166,10 @@ const TokenForm = () => {
 
     if (!searchMobile) {
 
-      alert("Enter mobile number");
+      alert(
+        "Enter mobile number"
+      );
+
       return;
     }
 
@@ -153,12 +177,48 @@ const TokenForm = () => {
 
       setSearchLoading(true);
 
-      const response = await fetch(
-        `${API_URL}?mobile=${searchMobile}`
-      );
+
+
+      // =====================
+      // TODAY DATE
+      // =====================
+
+      const today =
+        new Date();
+
+      const day = String(
+        today.getDate()
+      ).padStart(2, "0");
+
+      const month = String(
+        today.getMonth() + 1
+      ).padStart(2, "0");
+
+      const year =
+        today.getFullYear();
+
+
+
+      // SHEET NAME
+      const sheetName =
+        `${day}-${month}-${year}`;
+
+
+
+      // API CALL
+      const response =
+        await fetch(
+
+          `${API_URL}?mobile=${searchMobile}&sheetName=${sheetName}`
+
+        );
+
+
 
       const data =
         await response.json();
+
+
 
       if (data.success) {
 
@@ -169,7 +229,10 @@ const TokenForm = () => {
       } else {
 
         setFetchedToken("");
-        alert("Token not found");
+
+        alert(
+          "Token not found"
+        );
       }
 
     } catch (err) {
@@ -190,6 +253,10 @@ const TokenForm = () => {
 
       <div className="w-full max-w-xl bg-white p-8 rounded-2xl shadow-lg">
 
+        {/* ========================= */}
+        {/* HEADING */}
+        {/* ========================= */}
+
         <h1 className="text-3xl font-bold text-center text-orange-600 mb-8">
           Generate Token
         </h1>
@@ -204,6 +271,9 @@ const TokenForm = () => {
           onSubmit={generateToken}
           className="space-y-5"
         >
+
+
+          {/* NAME */}
 
           <div>
 
@@ -224,6 +294,8 @@ const TokenForm = () => {
 
 
 
+          {/* CITY */}
+
           <div>
 
             <label className="block mb-1 font-medium">
@@ -242,6 +314,8 @@ const TokenForm = () => {
           </div>
 
 
+
+          {/* MOBILE */}
 
           <div>
 
@@ -263,6 +337,8 @@ const TokenForm = () => {
 
 
 
+          {/* MEMBERS */}
+
           <div>
 
             <label className="block mb-1 font-medium">
@@ -281,6 +357,8 @@ const TokenForm = () => {
           </div>
 
 
+
+          {/* BUTTON */}
 
           <button
             type="submit"
@@ -309,6 +387,7 @@ const TokenForm = () => {
           </h2>
 
 
+
           <input
             type="text"
             placeholder="Enter mobile number"
@@ -320,6 +399,7 @@ const TokenForm = () => {
             }
             className="w-full border rounded-md px-4 py-2"
           />
+
 
 
           <button
@@ -335,6 +415,8 @@ const TokenForm = () => {
           </button>
 
 
+
+          {/* TOKEN RESULT */}
 
           {fetchedToken && (
 
@@ -391,7 +473,7 @@ const TokenForm = () => {
 
 
       {/* ========================= */}
-      {/* GET TOKEN LOADING */}
+      {/* SEARCH TOKEN LOADING */}
       {/* ========================= */}
 
       {searchLoading && (
@@ -466,5 +548,6 @@ const TokenForm = () => {
     </div>
   );
 };
+
 
 export default TokenForm;
