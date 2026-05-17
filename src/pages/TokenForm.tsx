@@ -2,16 +2,22 @@
 // React Token Form Component
 // ============================
 
-import React, { useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
+import html2canvas from "html2canvas";
 
 const TokenForm = () => {
 
-  const [form, setForm] = useState({
-    name: "",
-    city: "",
-    mobile: "",
-    members: "",
-  });
+  const [form, setForm] =
+    useState({
+      name: "",
+      city: "",
+      mobile: "",
+      members: "",
+    });
 
   const [token, setToken] =
     useState("");
@@ -31,6 +37,15 @@ const TokenForm = () => {
   const [searchLoading, setSearchLoading] =
     useState(false);
 
+  const [errorPopup, setErrorPopup] =
+    useState(false);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [invalidQRCode, setInvalidQRCode] =
+    useState(false);
+
 
 
   // =========================
@@ -43,7 +58,54 @@ const TokenForm = () => {
 
 
   // =========================
-  // HANDLE INPUT CHANGE
+  // CHECK QR DATE
+  // =========================
+
+  useEffect(() => {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const urlDate =
+      params.get("date");
+
+    if (!urlDate) {
+
+      setInvalidQRCode(true);
+      return;
+    }
+
+    const today =
+      new Date();
+
+    const day = String(
+      today.getDate()
+    ).padStart(2, "0");
+
+    const month = String(
+      today.getMonth() + 1
+    ).padStart(2, "0");
+
+    const year =
+      today.getFullYear();
+
+    const todayDate =
+      `${day}-${month}-${year}`;
+
+    if (urlDate !== todayDate) {
+
+      setInvalidQRCode(true);
+
+    }
+
+  }, []);
+
+
+
+  // =========================
+  // HANDLE CHANGE
   // =========================
 
   const handleChange = (e) => {
@@ -51,7 +113,6 @@ const TokenForm = () => {
     const { name, value } =
       e.target;
 
-    // ONLY NUMBER FOR MOBILE
     if (
       name === "mobile" &&
       !/^\d*$/.test(value)
@@ -61,6 +122,118 @@ const TokenForm = () => {
       ...form,
       [name]: value,
     });
+  };
+
+
+
+  // =========================
+  // SHARE TOKEN
+  // =========================
+
+  const shareToken = async () => {
+
+    try {
+
+      // MOBILE SHARE IMAGE
+      if (
+        /Android|iPhone|iPad|iPod/i.test(
+          navigator.userAgent
+        )
+      ) {
+
+        const element =
+          document.getElementById(
+            "token-share-card"
+          );
+
+        const canvas =
+          await html2canvas(
+            element
+          );
+
+        canvas.toBlob(
+          async (blob) => {
+
+            const file =
+              new File(
+                [blob],
+                "token.png",
+                {
+                  type: "image/png",
+                }
+              );
+
+            if (
+              navigator.canShare &&
+              navigator.canShare({
+                files: [file],
+              })
+            ) {
+
+              await navigator.share({
+
+                title:
+                  "Token Generated",
+
+                text:
+                  "Your token has been generated",
+
+                files: [file],
+
+              });
+
+            } else {
+
+              alert(
+                "Sharing not supported"
+              );
+            }
+
+          },
+          "image/png"
+        );
+
+      }
+
+      // WEB SHARE TEXT
+      else {
+
+        const today =
+          new Date();
+
+        const day = String(
+          today.getDate()
+        ).padStart(2, "0");
+
+        const month = String(
+          today.getMonth() + 1
+        ).padStart(2, "0");
+
+        const year =
+          today.getFullYear();
+
+        const formattedDate =
+          `${day}-${month}-${year}`;
+
+        const text =
+          `Token Generated Successfully\n\nName: ${form.name}\nToken Number: ${token}\nDate: ${formattedDate}`;
+
+        window.open(
+
+          `https://wa.me/?text=${encodeURIComponent(text)}`,
+
+          "_blank"
+        );
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+      alert(
+        "Failed to share token"
+      );
+    }
   };
 
 
@@ -80,9 +253,136 @@ const TokenForm = () => {
       !form.members
     ) {
 
-      alert("Please fill all fields");
+      setErrorMessage(
+        "Please fill all fields"
+      );
+
+      setErrorPopup(true);
+
       return;
     }
+
+
+
+    // =========================
+    // DATE & TIME VALIDATION
+    // =========================
+
+    const now =
+      new Date();
+
+    const day =
+      now.getDay();
+
+    const currentHour =
+      now.getHours();
+
+    const currentMinute =
+      now.getMinutes();
+
+    const currentTime =
+      currentHour * 60 +
+      currentMinute;
+
+
+
+    // TUESDAY
+    const tuesdayStart =
+      17 * 60;
+
+    const tuesdayEnd =
+      21 * 60;
+
+
+
+    // FRI SAT SUN
+    const weekendStart =
+      7 * 60 + 30;
+
+    const weekendEnd =
+      14 * 60 + 30;
+
+
+
+    let allowed =
+      false;
+
+    let message =
+      "";
+
+
+
+    // TUESDAY
+    if (day === 2) {
+
+      if (
+        currentTime >=
+          tuesdayStart &&
+        currentTime <=
+          tuesdayEnd
+      ) {
+
+        allowed = true;
+
+      } else {
+
+        message =
+          "Token can only be generated on Tuesday between 5:00 PM to 9:00 PM";
+      }
+    }
+
+
+
+    // FRI SAT SUN
+    else if (
+      day === 5 ||
+      day === 6 ||
+      day === 0
+    ) {
+
+      if (
+        currentTime >=
+          weekendStart &&
+        currentTime <=
+          weekendEnd
+      ) {
+
+        allowed = true;
+
+      } else {
+
+        message =
+          "Token can only be generated on Friday, Saturday & Sunday between 7:30 AM to 2:30 PM";
+      }
+    }
+
+
+
+    // OTHER DAYS
+    else {
+
+      message =
+        "Token generation is only available on Tuesday, Friday, Saturday and Sunday";
+    }
+
+
+
+    if (!allowed) {
+
+      setErrorMessage(
+        message
+      );
+
+      setErrorPopup(true);
+
+      return;
+    }
+
+
+
+    // =========================
+    // API CALL
+    // =========================
 
     try {
 
@@ -104,13 +404,16 @@ const TokenForm = () => {
 
 
 
-      const response = await fetch(
-        API_URL,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response =
+        await fetch(
+          API_URL,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+
 
       const data =
         await response.json();
@@ -125,30 +428,24 @@ const TokenForm = () => {
 
         setShowPopup(true);
 
-        // RESET FORM
-        setForm({
-
-          name: "",
-          city: "",
-          mobile: "",
-          members: "",
-
-        });
-
       } else {
 
-        alert(
+        setErrorMessage(
           "Failed to generate token"
         );
+
+        setErrorPopup(true);
       }
 
     } catch (err) {
 
       console.log(err);
 
-      alert(
+      setErrorMessage(
         "Something went wrong"
       );
+
+      setErrorPopup(true);
 
     } finally {
 
@@ -166,9 +463,11 @@ const TokenForm = () => {
 
     if (!searchMobile) {
 
-      alert(
+      setErrorMessage(
         "Enter mobile number"
       );
+
+      setErrorPopup(true);
 
       return;
     }
@@ -176,12 +475,6 @@ const TokenForm = () => {
     try {
 
       setSearchLoading(true);
-
-
-
-      // =====================
-      // TODAY DATE
-      // =====================
 
       const today =
         new Date();
@@ -197,15 +490,9 @@ const TokenForm = () => {
       const year =
         today.getFullYear();
 
-
-
-      // SHEET NAME
       const sheetName =
         `${day}-${month}-${year}`;
 
-
-
-      // API CALL
       const response =
         await fetch(
 
@@ -213,12 +500,8 @@ const TokenForm = () => {
 
         );
 
-
-
       const data =
         await response.json();
-
-
 
       if (data.success) {
 
@@ -230,14 +513,22 @@ const TokenForm = () => {
 
         setFetchedToken("");
 
-        alert(
+        setErrorMessage(
           "Token not found"
         );
+
+        setErrorPopup(true);
       }
 
     } catch (err) {
 
       console.log(err);
+
+      setErrorMessage(
+        "Something went wrong"
+      );
+
+      setErrorPopup(true);
 
     } finally {
 
@@ -247,15 +538,48 @@ const TokenForm = () => {
 
 
 
+  // =========================
+  // INVALID QR PAGE
+  // =========================
+
+  if (invalidQRCode) {
+
+    return (
+
+      <div className="min-h-screen bg-orange-50 flex items-center justify-center px-4">
+
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg text-center">
+
+          <div className="text-6xl mb-4">
+            ⚠️
+          </div>
+
+          <h1 className="text-3xl font-bold text-red-600 mb-4">
+            Wrong QR Code Scanned
+          </h1>
+
+          <p className="text-gray-700 text-lg mb-3">
+            Please scan today's latest QR Code to generate token.
+          </p>
+
+          <p className="text-gray-700 text-lg">
+            कृपया आज का नया QR Code स्कैन करें टोकन जनरेट करने के लिए।
+          </p>
+
+        </div>
+
+      </div>
+
+    );
+  }
+
+
+
   return (
 
     <div className="min-h-screen bg-orange-50 flex items-start justify-center pt-10 px-4 pb-10">
 
       <div className="w-full max-w-xl bg-white p-8 rounded-2xl shadow-lg">
-
-        {/* ========================= */}
-        {/* HEADING */}
-        {/* ========================= */}
 
         <h1 className="text-3xl font-bold text-center text-orange-600 mb-8">
           Generate Token
@@ -263,17 +587,12 @@ const TokenForm = () => {
 
 
 
-        {/* ========================= */}
         {/* FORM */}
-        {/* ========================= */}
 
         <form
           onSubmit={generateToken}
           className="space-y-5"
         >
-
-
-          {/* NAME */}
 
           <div>
 
@@ -294,8 +613,6 @@ const TokenForm = () => {
 
 
 
-          {/* CITY */}
-
           <div>
 
             <label className="block mb-1 font-medium">
@@ -314,8 +631,6 @@ const TokenForm = () => {
           </div>
 
 
-
-          {/* MOBILE */}
 
           <div>
 
@@ -337,8 +652,6 @@ const TokenForm = () => {
 
 
 
-          {/* MEMBERS */}
-
           <div>
 
             <label className="block mb-1 font-medium">
@@ -358,8 +671,6 @@ const TokenForm = () => {
 
 
 
-          {/* BUTTON */}
-
           <button
             type="submit"
             disabled={loading}
@@ -376,17 +687,13 @@ const TokenForm = () => {
 
 
 
-        {/* ========================= */}
-        {/* GET TOKEN */}
-        {/* ========================= */}
+        {/* GET TOKEN SECTION */}
 
         <div className="mt-10 border-t pt-8">
 
           <h2 className="text-2xl font-bold text-center text-orange-600 mb-5">
             Get Your Token
           </h2>
-
-
 
           <input
             type="text"
@@ -399,8 +706,6 @@ const TokenForm = () => {
             }
             className="w-full border rounded-md px-4 py-2"
           />
-
-
 
           <button
             onClick={getToken}
@@ -426,7 +731,7 @@ const TokenForm = () => {
                 Your Token Number
               </p>
 
-              <p className="text-3xl font-bold mt-2">
+              <p className="text-3xl font-bold mt-2 text-blue-700">
                 {fetchedToken}
               </p>
 
@@ -440,79 +745,16 @@ const TokenForm = () => {
 
 
 
-      {/* ========================= */}
-      {/* GENERATE TOKEN LOADING */}
-      {/* ========================= */}
-
-      {loading && (
-
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-
-          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
-
-            <div className="flex justify-center mb-4">
-
-              <div className="h-14 w-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-
-            </div>
-
-            <h2 className="text-xl font-bold text-orange-600">
-              Generating Token...
-            </h2>
-
-            <p className="text-gray-500 mt-2">
-              Please wait
-            </p>
-
-          </div>
-
-        </div>
-
-      )}
-
-
-
-      {/* ========================= */}
-      {/* SEARCH TOKEN LOADING */}
-      {/* ========================= */}
-
-      {searchLoading && (
-
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-
-          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
-
-            <div className="flex justify-center mb-4">
-
-              <div className="h-14 w-14 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-
-            </div>
-
-            <h2 className="text-xl font-bold">
-              Fetching Token...
-            </h2>
-
-            <p className="text-gray-500 mt-2">
-              Please wait
-            </p>
-
-          </div>
-
-        </div>
-
-      )}
-
-
-
-      {/* ========================= */}
       {/* SUCCESS POPUP */}
-      {/* ========================= */}
 
       {showPopup && (
 
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
-          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
+          <div
+            id="token-share-card"
+            className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80"
+          >
 
             <div className="text-6xl mb-3">
               🎉
@@ -530,11 +772,120 @@ const TokenForm = () => {
               {token}
             </p>
 
+            <div className="flex flex-col gap-3 mt-6">
+
+              <button
+                onClick={shareToken}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+              >
+                Share Token
+              </button>
+
+              <button
+                onClick={() => {
+
+                  setShowPopup(false);
+
+                  setForm({
+                    name: "",
+                    city: "",
+                    mobile: "",
+                    members: "",
+                  });
+
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg"
+              >
+                Close
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+      {/* GENERATE LOADING */}
+
+      {loading && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
+
+            <div className="flex justify-center mb-4">
+
+              <div className="h-14 w-14 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+
+            </div>
+
+            <h2 className="text-xl font-bold text-orange-600">
+              Generating Token...
+            </h2>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+      {/* SEARCH LOADING */}
+
+      {searchLoading && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
+
+            <div className="flex justify-center mb-4">
+
+              <div className="h-14 w-14 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+
+            </div>
+
+            <h2 className="text-xl font-bold">
+              Fetching Token...
+            </h2>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+      {/* ERROR POPUP */}
+
+      {errorPopup && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+          <div className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80">
+
+            <div className="text-5xl mb-3">
+              ⚠️
+            </div>
+
+            <h2 className="text-2xl font-bold text-red-600">
+              Error
+            </h2>
+
+            <p className="mt-4 text-gray-700">
+              {errorMessage}
+            </p>
+
             <button
               onClick={() =>
-                setShowPopup(false)
+                setErrorPopup(false)
               }
-              className="mt-6 bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg"
+              className="mt-6 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg"
             >
               Close
             </button>
@@ -548,6 +899,5 @@ const TokenForm = () => {
     </div>
   );
 };
-
 
 export default TokenForm;
