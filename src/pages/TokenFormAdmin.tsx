@@ -53,9 +53,7 @@ const TokenFormAdmin = () => {
 
       const response =
         await fetch(
-
           `${API_URL}?admin=true&date=${formattedDate}`
-
         );
 
       const data =
@@ -107,20 +105,14 @@ const TokenFormAdmin = () => {
       return;
     }
 
-
-
     const parts =
       shareDate.split("-");
 
     const formattedDate =
       `${parts[2]}-${parts[1]}-${parts[0]}`;
 
-
-
     const url =
       `https://shrisankatmochalmandal.netlify.app/TokenForm?date=${formattedDate}`;
-
-
 
     setGeneratedLink(url);
   };
@@ -128,10 +120,10 @@ const TokenFormAdmin = () => {
 
 
   // =======================================
-  // DOWNLOAD QR
+  // CREATE QR IMAGE
   // =======================================
 
-  const downloadQR = () => {
+  const createQRImage = (callback) => {
 
     const svg =
       document.getElementById(
@@ -155,35 +147,66 @@ const TokenFormAdmin = () => {
 
     img.onload = () => {
 
-      canvas.width =
-        300;
+      // Canvas Size
+      canvas.width = 600;
+      canvas.height = 700;
 
-      canvas.height =
-        300;
+      // Background
+      ctx.fillStyle = "#ffffff";
 
-      ctx.drawImage(
-        img,
+      ctx.fillRect(
         0,
-        0
+        0,
+        canvas.width,
+        canvas.height
       );
 
-      const pngFile =
-        canvas.toDataURL(
-          "image/png"
-        );
+      // Heading
+      ctx.fillStyle = "#ea580c";
 
-      const downloadLink =
-        document.createElement(
-          "a"
-        );
+      ctx.font =
+        "bold 32px Arial";
 
-      downloadLink.download =
-        "token-qr.png";
+      ctx.textAlign =
+        "center";
 
-      downloadLink.href =
-        pngFile;
+      ctx.fillText(
+        "Scan QR For Token",
+        canvas.width / 2,
+        70
+      );
 
-      downloadLink.click();
+      // QR Size
+      const qrSize = 350;
+
+      // Center Position
+      const x =
+        (canvas.width - qrSize) / 2;
+
+      const y = 120;
+
+      // Draw QR
+      ctx.drawImage(
+        img,
+        x,
+        y,
+        qrSize,
+        qrSize
+      );
+
+      // Footer Text
+      ctx.fillStyle = "#2563eb";
+
+      ctx.font =
+        "20px Arial";
+
+      ctx.fillText(
+        "Open link after scanning",
+        canvas.width / 2,
+        530
+      );
+
+      callback(canvas);
     };
 
     img.src =
@@ -194,92 +217,92 @@ const TokenFormAdmin = () => {
 
 
   // =======================================
-  // SHARE QR IMAGE
+  // DOWNLOAD QR
+  // =======================================
+
+  const downloadQR = () => {
+
+    createQRImage(
+      (canvas) => {
+
+        const pngFile =
+          canvas.toDataURL(
+            "image/png"
+          );
+
+        const downloadLink =
+          document.createElement(
+            "a"
+          );
+
+        downloadLink.download =
+          "token-qr.png";
+
+        downloadLink.href =
+          pngFile;
+
+        downloadLink.click();
+      }
+    );
+  };
+
+
+
+  // =======================================
+  // SHARE QR
   // =======================================
 
   const shareOnWhatsapp = async () => {
 
     try {
 
-      const svg =
-        document.getElementById(
-          "qr-code"
-        );
+      createQRImage(
+        async (canvas) => {
 
-      const svgData =
-        new XMLSerializer()
-          .serializeToString(svg);
+          canvas.toBlob(
+            async (blob) => {
 
-      const canvas =
-        document.createElement(
-          "canvas"
-        );
+              const file =
+                new File(
+                  [blob],
+                  "token-qr.png",
+                  {
+                    type:
+                      "image/png",
+                  }
+                );
 
-      const ctx =
-        canvas.getContext("2d");
+              if (
+                navigator.canShare &&
+                navigator.canShare({
+                  files: [file],
+                })
+              ) {
 
-      const img =
-        new Image();
+                await navigator.share({
 
-      img.onload = async () => {
+                  title:
+                    "Token QR",
 
-        canvas.width = 300;
-        canvas.height = 300;
+                  text:
+                    "Scan this QR to generate token",
 
-        ctx.drawImage(
-          img,
-          0,
-          0
-        );
+                  files: [file],
 
-        canvas.toBlob(
-          async (blob) => {
+                });
 
-            const file =
-              new File(
-                [blob],
-                "token-qr.png",
-                {
-                  type: "image/png",
-                }
-              );
+              } else {
 
+                alert(
+                  "Sharing not supported on this device"
+                );
+              }
 
-
-            if (
-              navigator.canShare &&
-              navigator.canShare({
-                files: [file],
-              })
-            ) {
-
-              await navigator.share({
-
-                title:
-                  "Token QR",
-
-                text:
-                  "Scan this QR to generate token",
-
-                files: [file],
-
-              });
-
-            } else {
-
-              alert(
-                "Sharing not supported on this device"
-              );
-            }
-
-          },
-          "image/png"
-        );
-      };
-
-      img.src =
-        "data:image/svg+xml;base64," +
-        btoa(svgData);
+            },
+            "image/png"
+          );
+        }
+      );
 
     } catch (err) {
 
@@ -337,7 +360,9 @@ const TokenFormAdmin = () => {
 
 
             <button
-              onClick={generateTokenLink}
+              onClick={
+                generateTokenLink
+              }
               className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
             >
               Generate QR
@@ -357,7 +382,9 @@ const TokenFormAdmin = () => {
 
                 <QRCode
                   id="qr-code"
-                  value={generatedLink}
+                  value={
+                    generatedLink
+                  }
                   size={220}
                 />
 
@@ -376,7 +403,9 @@ const TokenFormAdmin = () => {
               <div className="flex flex-col md:flex-row gap-3 mt-6 w-full md:w-auto">
 
                 <button
-                  onClick={downloadQR}
+                  onClick={
+                    downloadQR
+                  }
                   className="bg-black text-white px-6 py-2 rounded-md"
                 >
                   Download QR
@@ -385,7 +414,9 @@ const TokenFormAdmin = () => {
 
 
                 <button
-                  onClick={shareOnWhatsapp}
+                  onClick={
+                    shareOnWhatsapp
+                  }
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md"
                 >
                   Share QR On WhatsApp
@@ -402,143 +433,153 @@ const TokenFormAdmin = () => {
 
 
         {/* ======================================= */}
-        {/* SEARCH SECTION */}
+        {/* GET TOKEN LIST */}
         {/* ======================================= */}
 
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="bg-orange-50 border rounded-2xl p-6 mb-10">
 
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) =>
-              setSelectedDate(
-                e.target.value
-              )
-            }
-            className="border rounded-md px-4 py-2 w-full"
-          />
+          <h2 className="text-2xl font-bold text-orange-600 mb-5">
+            Get Token List
+          </h2>
 
 
 
-          <button
-            onClick={searchData}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
-          >
+          <div className="flex flex-col md:flex-row gap-4 mb-8">
 
-            {loading
-              ? "Searching..."
-              : "Search"}
-
-          </button>
-
-        </div>
-
-
-
-        {/* ======================================= */}
-        {/* TABLE */}
-        {/* ======================================= */}
-
-        <div className="overflow-auto rounded-xl border">
-
-          <table className="w-full border-collapse">
-
-            <thead>
-
-              <tr className="bg-orange-100">
-
-                <th className="border p-3">
-                  Token
-                </th>
-
-                <th className="border p-3">
-                  Name
-                </th>
-
-                <th className="border p-3">
-                  City
-                </th>
-
-                <th className="border p-3">
-                  Mobile
-                </th>
-
-                <th className="border p-3">
-                  Members
-                </th>
-
-                <th className="border p-3">
-                  Created At
-                </th>
-
-              </tr>
-
-            </thead>
-
-
-
-            <tbody>
-
-              {records.length > 0 ? (
-
-                records.map(
-                  (
-                    item,
-                    index
-                  ) => (
-
-                    <tr
-                      key={index}
-                      className="hover:bg-orange-50"
-                    >
-
-                      <td className="border p-3 font-semibold">
-                        {item.token}
-                      </td>
-
-                      <td className="border p-3">
-                        {item.name}
-                      </td>
-
-                      <td className="border p-3">
-                        {item.city}
-                      </td>
-
-                      <td className="border p-3">
-                        {item.mobile}
-                      </td>
-
-                      <td className="border p-3">
-                        {item.members}
-                      </td>
-
-                      <td className="border p-3">
-                        {item.createdAt}
-                      </td>
-
-                    </tr>
-
-                  )
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) =>
+                setSelectedDate(
+                  e.target.value
                 )
+              }
+              className="border rounded-md px-4 py-2 w-full"
+            />
 
-              ) : (
 
-                <tr>
 
-                  <td
-                    colSpan="6"
-                    className="text-center p-5"
-                  >
-                    No Data Found
-                  </td>
+            <button
+              onClick={searchData}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-md"
+            >
+
+              {loading
+                ? "Searching..."
+                : "Search"}
+
+            </button>
+
+          </div>
+
+
+
+          {/* ======================================= */}
+          {/* TABLE */}
+          {/* ======================================= */}
+
+          <div className="overflow-auto rounded-xl border bg-white">
+
+            <table className="w-full border-collapse">
+
+              <thead>
+
+                <tr className="bg-orange-100">
+
+                  <th className="border p-3">
+                    Token
+                  </th>
+
+                  <th className="border p-3">
+                    Name
+                  </th>
+
+                  <th className="border p-3">
+                    City
+                  </th>
+
+                  <th className="border p-3">
+                    Mobile
+                  </th>
+
+                  <th className="border p-3">
+                    Members
+                  </th>
+
+                  <th className="border p-3">
+                    Created At
+                  </th>
 
                 </tr>
 
-              )}
+              </thead>
 
-            </tbody>
 
-          </table>
+
+              <tbody>
+
+                {records.length > 0 ? (
+
+                  records.map(
+                    (
+                      item,
+                      index
+                    ) => (
+
+                      <tr
+                        key={index}
+                        className="hover:bg-orange-50"
+                      >
+
+                        <td className="border p-3 font-semibold">
+                          {item.token}
+                        </td>
+
+                        <td className="border p-3">
+                          {item.name}
+                        </td>
+
+                        <td className="border p-3">
+                          {item.city}
+                        </td>
+
+                        <td className="border p-3">
+                          {item.mobile}
+                        </td>
+
+                        <td className="border p-3">
+                          {item.members}
+                        </td>
+
+                        <td className="border p-3">
+                          {item.createdAt}
+                        </td>
+
+                      </tr>
+
+                    )
+                  )
+
+                ) : (
+
+                  <tr>
+
+                    <td
+                      colSpan="6"
+                      className="text-center p-5"
+                    >
+                      No Data Found
+                    </td>
+
+                  </tr>
+
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
 
         </div>
 
