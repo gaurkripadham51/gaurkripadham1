@@ -12,6 +12,7 @@ const Navbar = () => {
     // { path: '/festivals', label: 'Festivals' },
     { path: '/programs', label: 'Programs' },
     { path: '/donations', label: 'Donations' },
+    { path: '/FeedbackForm', label: 'FeedbackForm' },
 
     // Devotee Details related routes commented for now
     // { path: '/InitiationForm', label: 'Initiation Form' },

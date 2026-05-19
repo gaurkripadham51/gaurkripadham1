@@ -20,6 +20,7 @@ import GuruPurnimaEventRegistrationForm from './pages/GuruPurnimaEventRegistrati
 import ShriNitaiDasJiMaharaj_Playlist from './pages/ShriNitaiDasJiMaharaj_Playlist';
 import TokenForm from './pages/TokenForm';
 import TokenFormAdmin from './pages/TokenFormAdmin';
+import FeedbackForm from './pages/FeedbackForm';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
           <Route path="/books" element={<BookList />} />
           <Route path="/TokenForm" element={<TokenForm />} />
           <Route path="/TokenFormAdmin" element={<TokenFormAdmin />} />
+          <Route path="/FeedbackForm" element={<FeedbackForm />} />
         <Route path="/book/:bookId" element={<BookIndex />} />
         <Route path="/book/:bookId/page/:pageId" element={<PageText />} />
           <Route path="*" element={<Navigate to="/" replace />} />
