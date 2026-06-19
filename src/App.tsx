@@ -21,6 +21,8 @@ import ShriNitaiDasJiMaharaj_Playlist from './pages/ShriNitaiDasJiMaharaj_Playli
 import TokenForm from './pages/TokenForm';
 import TokenFormAdmin from './pages/TokenFormAdmin';
 import FeedbackForm from './pages/FeedbackForm';
+import RoomBookingForm from './pages/RoomBookingForm';
+RoomBookingForm
 
 function App() {
   return (
@@ -45,8 +47,10 @@ function App() {
           <Route path="/TokenForm" element={<TokenForm />} />
           <Route path="/TokenFormAdmin" element={<TokenFormAdmin />} />
           <Route path="/FeedbackForm" element={<FeedbackForm />} />
+          <Route path="/RoomBookingForm" element={<RoomBookingForm />} />
         <Route path="/book/:bookId" element={<BookIndex />} />
         <Route path="/book/:bookId/page/:pageId" element={<PageText />} />
+        RoomBookingForm
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />
