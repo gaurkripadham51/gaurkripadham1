@@ -20,8 +20,19 @@ const SAMAGRI_CATEGORIES = [
       { name: "पित्तरों के नाम के", qty: "₹ 10/-" },
       { name: "गौ सेवा", qty: "₹ 11/-" },
       { name: "शुद्ध देसी घी", qty: "250 ग्रा." },
+      { name: "तिल का तेल (ज्योत के लिए)", qty: "500 ग्रा." },
       { name: "भोग के लिए मिठाई", qty: "½ कि. / 1 कि." },
       { name: "मिट्टी (घर / दुकान / फैक्ट्री)", qty: "" },
+    ],
+  },
+  {
+    id: "mata",
+    title: "माता के मन्दिर के लिए",
+    items: [
+      { name: "नारियल पानी वाला", qty: "1 नग" },
+      { name: "माँ के लिए बड़ी चुनरी", qty: "1 नग" },
+      { name: "त्रिशूल (छोटा/बड़ा) बिना स्टैंड का", qty: "1 नग" },
+      { name: "माँ के लिये श्रृंगार का सामान", qty: "1 पैकेट" },
     ],
   },
   {
@@ -57,7 +68,8 @@ const TokenFormAdmin = () => {
 
   // ---- Aavashyak Puja Samagri state ----
 
-  const [samagriChecked, setSamagriChecked] =
+  // samagriItemChecked is keyed by "<categoryId>-<itemIndex>" -> true/false
+  const [samagriItemChecked, setSamagriItemChecked] =
     useState({});
 
   const [samagriSharing, setSamagriSharing] =
@@ -360,26 +372,71 @@ const TokenFormAdmin = () => {
 
 
   // =======================================
-  // AAVASHYAK PUJA SAMAGRI - TOGGLE CATEGORY
+  // AAVASHYAK PUJA SAMAGRI - ITEM LEVEL SELECTION
   // =======================================
 
-  const toggleSamagriCategory = (id) => {
+  const samagriItemKey = (catId, idx) => `${catId}-${idx}`;
 
-    setSamagriChecked((prev) => ({
+  const isSamagriItemChecked = (catId, idx) =>
+    !!samagriItemChecked[samagriItemKey(catId, idx)];
+
+  const toggleSamagriItem = (catId, idx) => {
+
+    const key = samagriItemKey(catId, idx);
+
+    setSamagriItemChecked((prev) => ({
       ...prev,
-      [id]: !prev[id],
+      [key]: !prev[key],
     }));
   };
 
 
 
-  const selectedSamagriCategories =
-    SAMAGRI_CATEGORIES.filter(
-      (cat) => samagriChecked[cat.id]
-    );
+  // a category counts as "selected" the moment even 1 of
+  // its items below is checked - this drives the category
+  // checkbox showing as ticked automatically
+  const isSamagriCategoryAnySelected = (cat) =>
+    cat.items.some((_, idx) => isSamagriItemChecked(cat.id, idx));
+
+  const isSamagriCategoryFullySelected = (cat) =>
+    cat.items.every((_, idx) => isSamagriItemChecked(cat.id, idx));
+
+
+
+  // clicking the category checkbox itself = select / clear
+  // every item under that category in one go
+  const toggleSamagriCategory = (cat) => {
+
+    const fullySelected = isSamagriCategoryFullySelected(cat);
+
+    setSamagriItemChecked((prev) => {
+
+      const updated = { ...prev };
+
+      cat.items.forEach((_, idx) => {
+        updated[samagriItemKey(cat.id, idx)] = !fullySelected;
+      });
+
+      return updated;
+    });
+  };
+
+
+
+  // only categories that have at least 1 checked item, and
+  // only the checked items inside them - this is what goes
+  // into the shared text / image
+  const selectedSamagriData = SAMAGRI_CATEGORIES
+    .map((cat) => ({
+      ...cat,
+      items: cat.items.filter((_, idx) =>
+        isSamagriItemChecked(cat.id, idx)
+      ),
+    }))
+    .filter((cat) => cat.items.length > 0);
 
   const hasSamagriSelection =
-    selectedSamagriCategories.length > 0;
+    selectedSamagriData.length > 0;
 
 
 
@@ -387,17 +444,19 @@ const TokenFormAdmin = () => {
 
     const all = {};
 
-    SAMAGRI_CATEGORIES.forEach(
-      (c) => (all[c.id] = true)
-    );
+    SAMAGRI_CATEGORIES.forEach((cat) => {
+      cat.items.forEach((_, idx) => {
+        all[samagriItemKey(cat.id, idx)] = true;
+      });
+    });
 
-    setSamagriChecked(all);
+    setSamagriItemChecked(all);
   };
 
 
 
   const clearAllSamagri = () =>
-    setSamagriChecked({});
+    setSamagriItemChecked({});
 
 
 
@@ -412,7 +471,7 @@ const TokenFormAdmin = () => {
 
     text += "आवश्यक पूजा सामग्री\n\n";
 
-    selectedSamagriCategories.forEach((cat) => {
+    selectedSamagriData.forEach((cat) => {
 
       text += `*${cat.title}*\n`;
 
@@ -448,7 +507,7 @@ const TokenFormAdmin = () => {
 
     let totalLines = 0;
 
-    selectedSamagriCategories.forEach((cat) => {
+    selectedSamagriData.forEach((cat) => {
 
       totalLines += 1;
       totalLines += cat.items.length;
@@ -504,7 +563,7 @@ const TokenFormAdmin = () => {
 
     ctx.textAlign = "right";
 
-    selectedSamagriCategories.forEach((cat) => {
+    selectedSamagriData.forEach((cat) => {
 
       ctx.fillStyle = "#c2410c";
       ctx.font = "bold 24px Arial";
@@ -963,21 +1022,21 @@ const TokenFormAdmin = () => {
 
             {SAMAGRI_CATEGORIES.map((cat) => {
 
-              const isChecked =
-                !!samagriChecked[cat.id];
+              const anySelected =
+                isSamagriCategoryAnySelected(cat);
 
               return (
 
                 <div
                   key={cat.id}
                   className={`border rounded-xl overflow-hidden bg-white transition ${
-                    isChecked
+                    anySelected
                       ? "border-orange-500"
                       : "border-gray-200"
                   }`}
                 >
 
-                  {/* CATEGORY HEADER */}
+                  {/* CATEGORY HEADER - checkbox here selects/clears ALL items below in one go */}
 
                   <label className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer">
 
@@ -987,11 +1046,9 @@ const TokenFormAdmin = () => {
 
                     <input
                       type="checkbox"
-                      checked={isChecked}
+                      checked={anySelected}
                       onChange={() =>
-                        toggleSamagriCategory(
-                          cat.id
-                        )
+                        toggleSamagriCategory(cat)
                       }
                       className="w-5 h-5 accent-orange-600 shrink-0"
                     />
@@ -1000,26 +1057,40 @@ const TokenFormAdmin = () => {
 
 
 
-                  {/* ITEM LIST - only when checked */}
+                  {/* ITEM LIST - always visible, each item has its own checkbox */}
 
-                  {isChecked && (
+                  <div className="px-4 pb-4">
 
-                    <div className="px-4 pb-4">
+                    <table className="w-full text-xs sm:text-sm border-t">
 
-                      <table className="w-full text-xs sm:text-sm border-t">
+                      <tbody>
 
-                        <tbody>
+                        {cat.items.map(
+                          (item, idx) => {
 
-                          {cat.items.map(
-                            (item, idx) => (
+                            const itemChecked =
+                              isSamagriItemChecked(cat.id, idx);
+
+                            return (
 
                               <tr
                                 key={idx}
-                                className="border-b border-orange-100"
+                                className={`border-b border-orange-100 ${
+                                  itemChecked
+                                    ? "bg-orange-50"
+                                    : ""
+                                }`}
                               >
 
-                                <td className="py-2 pr-2 text-gray-500 w-6">
-                                  {idx + 1}.
+                                <td className="py-2 pl-1 pr-2 w-6">
+                                  <input
+                                    type="checkbox"
+                                    checked={itemChecked}
+                                    onChange={() =>
+                                      toggleSamagriItem(cat.id, idx)
+                                    }
+                                    className="w-4 h-4 accent-orange-600"
+                                  />
                                 </td>
 
                                 <td className="py-2 pr-2 text-gray-800">
@@ -1032,16 +1103,15 @@ const TokenFormAdmin = () => {
 
                               </tr>
 
-                            )
-                          )}
+                            );
+                          }
+                        )}
 
-                        </tbody>
+                      </tbody>
 
-                      </table>
+                    </table>
 
-                    </div>
-
-                  )}
+                  </div>
 
                 </div>
 

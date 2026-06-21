@@ -59,6 +59,7 @@ const TokenForm = () => {
 
   // =========================
   // CHECK QR DATE
+  // (unchanged - QR is only valid for today's date)
   // =========================
 
   useEffect(() => {
@@ -240,6 +241,8 @@ const TokenForm = () => {
 
   // =========================
   // GENERATE TOKEN
+  // (time-window validation removed - date check
+  // is already handled above via the QR's ?date= param)
   // =========================
 
   const generateToken = async (e) => {
@@ -255,122 +258,6 @@ const TokenForm = () => {
 
       setErrorMessage(
         "Please fill all fields"
-      );
-
-      setErrorPopup(true);
-
-      return;
-    }
-
-
-
-    // =========================
-    // DATE & TIME VALIDATION
-    // =========================
-
-    const now =
-      new Date();
-
-    const day =
-      now.getDay();
-
-    const currentHour =
-      now.getHours();
-
-    const currentMinute =
-      now.getMinutes();
-
-    const currentTime =
-      currentHour * 60 +
-      currentMinute;
-
-
-
-    // TUESDAY
-    const tuesdayStart =
-      17 * 60;
-
-    const tuesdayEnd =
-      21 * 60;
-
-
-
-    // FRI SAT SUN
-    const weekendStart =
-      7 * 60 + 30;
-
-    const weekendEnd =
-      14 * 60 + 30;
-
-
-
-    let allowed =
-      false;
-
-    let message =
-      "";
-
-
-
-    // TUESDAY
-    if (day === 2) {
-
-      if (
-        currentTime >=
-          tuesdayStart &&
-        currentTime <=
-          tuesdayEnd
-      ) {
-
-        allowed = true;
-
-      } else {
-
-        message =
-          "Token can only be generated on Tuesday between 5:00 PM to 9:00 PM";
-      }
-    }
-
-
-
-    // FRI SAT SUN
-    else if (
-      day === 5 ||
-      day === 6 ||
-      day === 0
-    ) {
-
-      if (
-        currentTime >=
-          weekendStart &&
-        currentTime <=
-          weekendEnd
-      ) {
-
-        allowed = true;
-
-      } else {
-
-        message =
-          "Token can only be generated on Friday, Saturday & Sunday between 7:30 AM to 2:30 PM";
-      }
-    }
-
-
-
-    // OTHER DAYS
-    else {
-
-      message =
-        "Token generation is only available on Tuesday, Friday, Saturday and Sunday";
-    }
-
-
-
-    if (!allowed) {
-
-      setErrorMessage(
-        message
       );
 
       setErrorPopup(true);

@@ -1,14 +1,16 @@
 // =======================================
 // RoomBookingForm.jsx
 // Room Booking Page
-//   Step 1: enter stay dates + guest count -> Search Available Rooms
-//   Step 2: pick a room from dropdown (capacity + extra bedding aware)
-//   Step 3: fill guest details -> Book Room
+//   Step 1: enter stay dates -> Search Available Rooms (date based only)
+//   Step 2: pick a room from dropdown
+//   Step 3: fill guest details (incl. extra bedding given) -> Book Room
 // + Room Status (occupancy) checker by date
+// + Manage Bookings (list + cancel with reason) by date
 // Backend: Google Apps Script + Google Sheet
 // =======================================
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import jsPDF from "jspdf";
 
 // =======================================
 // CHANGE THIS to your deployed Apps Script Web App URL
@@ -17,15 +19,143 @@ import React, { useState } from "react";
 const API_URL =
   "https://script.google.com/macros/s/AKfycbzxOeJWJ5K07N2uFILqe7l1l2VIesucTFoFJKP9QECxWPuYHNN250RyDC-238L1RkeOGA/exec";
 
+// =======================================
+// PDF PAGE LAYOUT (Manage Bookings share)
+// Each page is first drawn on a canvas (so Hindi names render
+// correctly) then embedded into the PDF as an image.
+// =======================================
+
+const PDF_PAGE_WIDTH = 800;
+const PDF_PAGE_HEIGHT = 1000;
+const ROWS_PER_PDF_PAGE = 12;
+
+const truncateText = (text, max) => {
+  const str = String(text || "");
+  return str.length > max ? str.slice(0, max - 1) + "…" : str;
+};
+
+const drawBookingsPageCanvas = (pageRows, pageNum, totalPages, dateLabel) => {
+
+  const canvas = document.createElement("canvas");
+  canvas.width = PDF_PAGE_WIDTH;
+  canvas.height = PDF_PAGE_HEIGHT;
+
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ea580c";
+  ctx.font = "bold 30px Arial";
+  ctx.fillText("Room Bookings", PDF_PAGE_WIDTH / 2, 55);
+
+  ctx.fillStyle = "#1f2937";
+  ctx.font = "20px Arial";
+  ctx.fillText(
+    `Date: ${dateLabel}   (Page ${pageNum}/${totalPages})`,
+    PDF_PAGE_WIDTH / 2,
+    90
+  );
+
+  const col = {
+    name: 40,
+    mobile: 230,
+    room: 360,
+    checkIn: 440,
+    checkOut: 570,
+    status: 700,
+  };
+
+  let y = 140;
+
+  ctx.textAlign = "left";
+  ctx.font = "bold 18px Arial";
+  ctx.fillStyle = "#ea580c";
+
+  ctx.fillText("Name", col.name, y);
+  ctx.fillText("Mobile", col.mobile, y);
+  ctx.fillText("Room", col.room, y);
+  ctx.fillText("Check-in", col.checkIn, y);
+  ctx.fillText("Check-out", col.checkOut, y);
+  ctx.fillText("Status", col.status, y);
+
+  ctx.strokeStyle = "#fdba74";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(30, y + 12);
+  ctx.lineTo(PDF_PAGE_WIDTH - 30, y + 12);
+  ctx.stroke();
+
+  y += 50;
+  ctx.font = "17px Arial";
+
+  pageRows.forEach((b) => {
+
+    ctx.fillStyle = "#111827";
+    ctx.fillText(truncateText(b.name, 18), col.name, y);
+    ctx.fillText(String(b.mobile || ""), col.mobile, y);
+    ctx.fillText(String(b.roomNumber), col.room, y);
+    ctx.fillText(String(b.checkIn).split("T")[0], col.checkIn, y);
+    ctx.fillText(String(b.checkOut).split("T")[0], col.checkOut, y);
+
+    ctx.fillStyle =
+      b.status === "Active"
+        ? "#16a34a"
+        : b.status === "Cancelled"
+        ? "#dc2626"
+        : "#6b7280";
+
+    ctx.fillText(b.status, col.status, y);
+
+    y += 42;
+  });
+
+  return canvas;
+};
+
+const generateBookingsPDF = (bookingsList, dateLabel) => {
+
+  const rows = bookingsList || [];
+  const pages = [];
+
+  for (let i = 0; i < rows.length; i += ROWS_PER_PDF_PAGE) {
+    pages.push(rows.slice(i, i + ROWS_PER_PDF_PAGE));
+  }
+
+  if (pages.length === 0) pages.push([]);
+
+  const pdf = new jsPDF({
+    unit: "px",
+    format: [PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT],
+  });
+
+  pages.forEach((pageRows, idx) => {
+
+    const canvas = drawBookingsPageCanvas(
+      pageRows,
+      idx + 1,
+      pages.length,
+      dateLabel
+    );
+
+    const imgData = canvas.toDataURL("image/jpeg", 0.92);
+
+    if (idx > 0) {
+      pdf.addPage([PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT], "p");
+    }
+
+    pdf.addImage(imgData, "JPEG", 0, 0, PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT);
+  });
+
+  return pdf;
+};
+
 const RoomBookingForm = () => {
 
   // ---- stay details ----
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
-
-  const [adultMale, setAdultMale] = useState("");
-  const [adultFemale, setAdultFemale] = useState("");
-  const [child, setChild] = useState("");
 
   // ---- room search ----
   const [searching, setSearching] = useState(false);
@@ -37,6 +167,10 @@ const RoomBookingForm = () => {
   const [name, setName] = useState("");
   const [gender, setGender] = useState(""); // "Male" | "Female"
   const [mobile, setMobile] = useState("");
+  const [adultMale, setAdultMale] = useState("");
+  const [adultFemale, setAdultFemale] = useState("");
+  const [child, setChild] = useState("");
+  const [extraBedding, setExtraBedding] = useState("");
   const [aadhar4, setAadhar4] = useState("");
   const [bookedBy, setBookedBy] = useState("");
 
@@ -48,12 +182,62 @@ const RoomBookingForm = () => {
   const [occLoading, setOccLoading] = useState(false);
   const [occResult, setOccResult] = useState(null);
 
+  // ---- manage bookings (admin list + cancel) ----
+  const [manageDate, setManageDate] = useState("");
+  const [manageLoading, setManageLoading] = useState(false);
+  const [bookingsList, setBookingsList] = useState([]);
+  const [manageSearched, setManageSearched] = useState(false);
+
+  // ---- cancel modal ----
+  const [cancelTarget, setCancelTarget] = useState(null); // bookingId
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+
+  // ---- canvas used to build the booking-confirmation share image ----
+  const bookingCanvasRef = useRef(null);
+  const [confirmationSharing, setConfirmationSharing] = useState(false);
 
 
-  const totalGuests =
-    (Number(adultMale) || 0) +
-    (Number(adultFemale) || 0) +
-    (Number(child) || 0);
+
+  // =======================================
+  // PLAY SUCCESS SOUND (Web Audio API - no asset file needed)
+  // =======================================
+
+  const playSuccessSound = () => {
+
+    try {
+
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioCtx();
+
+      const playTone = (freq, startTime, duration) => {
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      };
+
+      const now = ctx.currentTime;
+
+      playTone(880, now, 0.15);
+      playTone(1320, now + 0.15, 0.25);
+
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
 
 
@@ -64,25 +248,21 @@ const RoomBookingForm = () => {
   const resetForm = () => {
     setCheckIn("");
     setCheckOut("");
-    setAdultMale("");
-    setAdultFemale("");
-    setChild("");
     setAvailableRooms([]);
     setSelectedRoom("");
     setSearched(false);
     setName("");
     setGender("");
     setMobile("");
+    setAdultMale("");
+    setAdultFemale("");
+    setChild("");
+    setExtraBedding("");
     setAadhar4("");
     setBookedBy("");
   };
 
 
-
-  // =======================================
-  // any change in stay details invalidates the
-  // previously searched room list
-  // =======================================
 
   const onStayDetailChange = () => {
     setAvailableRooms([]);
@@ -93,7 +273,7 @@ const RoomBookingForm = () => {
 
 
   // =======================================
-  // SEARCH AVAILABLE ROOMS
+  // SEARCH AVAILABLE ROOMS (date based only)
   // =======================================
 
   const searchAvailableRooms = async () => {
@@ -108,11 +288,6 @@ const RoomBookingForm = () => {
       return;
     }
 
-    if (totalGuests <= 0) {
-      alert("कम से कम 1 guest (Male/Female/Child) count डालें");
-      return;
-    }
-
     setSearching(true);
     setSearched(false);
     setSelectedRoom("");
@@ -120,7 +295,7 @@ const RoomBookingForm = () => {
     try {
 
       const response = await fetch(
-        `${API_URL}?action=availableRooms&checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}`
+        `${API_URL}?action=availableRooms&checkIn=${checkIn}&checkOut=${checkOut}`
       );
 
       const data = await response.json();
@@ -175,12 +350,14 @@ const RoomBookingForm = () => {
     try {
 
       const payload = {
+        action: "createBooking",
         name,
         gender,
         mobile,
         adultMale: adultMale || 0,
         adultFemale: adultFemale || 0,
         child: child || 0,
+        extraBedding: extraBedding || 0,
         checkIn,
         checkOut,
         aadhar4,
@@ -197,14 +374,21 @@ const RoomBookingForm = () => {
 
       if (data.success) {
 
-        setBookingResult(data);
+        setBookingResult({
+          ...data,
+          name,
+          mobile,
+          checkIn,
+          checkOut,
+        });
+
+        playSuccessSound();
+
         resetForm();
 
       } else {
 
         alert(data.message || "Booking failed");
-
-        // room might have just been taken - refresh the list
         searchAvailableRooms();
       }
 
@@ -265,6 +449,437 @@ const RoomBookingForm = () => {
 
 
 
+  // =======================================
+  // MANAGE BOOKINGS - LIST BY DATE
+  // =======================================
+
+  const searchBookingsByDate = async () => {
+
+    if (!manageDate) {
+      alert("Date चुनें");
+      return;
+    }
+
+    setManageLoading(true);
+    setManageSearched(false);
+
+    try {
+
+      const response = await fetch(
+        `${API_URL}?action=listBookings&date=${manageDate}`
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        setBookingsList(data.bookings);
+        setManageSearched(true);
+
+      } else {
+
+        alert(data.message || "Failed to fetch");
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      alert("Something went wrong");
+
+    } finally {
+
+      setManageLoading(false);
+    }
+  };
+
+
+
+  // =======================================
+  // CREATE BOOKING CONFIRMATION IMAGE (canvas)
+  // =======================================
+
+  const createBookingConfirmationImage = (callback) => {
+
+    const canvas =
+      bookingCanvasRef.current || document.createElement("canvas");
+
+    const ctx = canvas.getContext("2d");
+
+    const width = 640;
+    const height = 480;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    // background
+    ctx.fillStyle = "#f0fdf4";
+    ctx.fillRect(0, 0, width, height);
+
+    // border
+    ctx.strokeStyle = "#16a34a";
+    ctx.lineWidth = 6;
+    ctx.strokeRect(10, 10, width - 20, height - 20);
+
+    // header
+    ctx.fillStyle = "#16a34a";
+    ctx.textAlign = "center";
+    ctx.font = "bold 28px Arial";
+    ctx.fillText("Room Booking Confirmed ✅", width / 2, 60);
+
+    ctx.fillStyle = "#ea580c";
+    ctx.font = "bold 22px Arial";
+    ctx.fillText(
+      "Shri Sankat Mochan Balaji Charitable Trust",
+      width / 2,
+      95
+    );
+
+    ctx.strokeStyle = "#bbf7d0";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, 115);
+    ctx.lineTo(width - 40, 115);
+    ctx.stroke();
+
+    // room number - big
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 34px Arial";
+    ctx.fillText(`Room No. ${bookingResult.room}`, width / 2, 170);
+
+    // details
+    ctx.textAlign = "left";
+    ctx.font = "22px Arial";
+    ctx.fillStyle = "#1f2937";
+
+    const lines = [
+      `Name: ${bookingResult.name}`,
+      `Mobile: ${bookingResult.mobile}`,
+      `Check-in: ${bookingResult.checkIn}`,
+      `Check-out: ${bookingResult.checkOut}`,
+      `Booking ID: ${bookingResult.bookingId}`,
+    ];
+
+    let y = 230;
+
+    lines.forEach((line) => {
+      ctx.fillText(line, 60, y);
+      y += 42;
+    });
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#2563eb";
+    ctx.font = "16px Arial";
+    ctx.fillText(
+      "होम डिलिवरी: वायु पुत्र पूजा की दुकान",
+      width / 2,
+      height - 30
+    );
+
+    callback(canvas);
+  };
+
+
+
+  // =======================================
+  // SHARE BOOKING CONFIRMATION ON WHATSAPP
+  // =======================================
+
+  const shareBookingOnWhatsapp = async () => {
+
+    if (!bookingResult) return;
+
+    setConfirmationSharing(true);
+
+    const shareText =
+      `🙏 Room Booking Confirmed\n` +
+      `Name: ${bookingResult.name}\n` +
+      `Room No: ${bookingResult.room}\n` +
+      `Check-in: ${bookingResult.checkIn}\n` +
+      `Check-out: ${bookingResult.checkOut}\n` +
+      `Booking ID: ${bookingResult.bookingId}`;
+
+    try {
+
+      createBookingConfirmationImage((canvas) => {
+
+        canvas.toBlob(async (blob) => {
+
+          try {
+
+            const file = new File(
+              [blob],
+              "booking-confirmation.png",
+              { type: "image/png" }
+            );
+
+            if (
+              navigator.canShare &&
+              navigator.canShare({ files: [file] })
+            ) {
+
+              await navigator.share({
+                title: "Room Booking Confirmed",
+                text: shareText,
+                files: [file],
+              });
+
+            } else if (navigator.share) {
+
+              await navigator.share({
+                title: "Room Booking Confirmed",
+                text: shareText,
+              });
+
+            } else {
+
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+                "_blank"
+              );
+            }
+
+          } catch (err) {
+
+            console.log(err);
+
+          } finally {
+
+            setConfirmationSharing(false);
+          }
+
+        }, "image/png");
+      });
+
+    } catch (err) {
+
+      console.log(err);
+      setConfirmationSharing(false);
+    }
+  };
+
+
+
+  // =======================================
+  // MANAGE BOOKINGS - DOWNLOAD AS CSV
+  // =======================================
+
+  const downloadBookingsCSV = () => {
+
+    if (!bookingsList.length) {
+      alert("Download करने के लिए कोई booking नहीं है");
+      return;
+    }
+
+    const headers = [
+      "BookingId",
+      "Name",
+      "Mobile",
+      "Room",
+      "CheckIn",
+      "CheckOut",
+      "Status",
+      "AdultMale",
+      "AdultFemale",
+      "Child",
+      "ExtraBedding",
+    ];
+
+    let csv = headers.join(",") + "\n";
+
+    bookingsList.forEach((b) => {
+
+      const row = [
+        b.bookingId,
+        b.name,
+        b.mobile,
+        b.roomNumber,
+        String(b.checkIn).split("T")[0],
+        String(b.checkOut).split("T")[0],
+        b.status,
+        b.adultMale,
+        b.adultFemale,
+        b.child,
+        b.extraBedding,
+      ];
+
+      csv +=
+        row
+          .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
+          .join(",") + "\n";
+    });
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bookings-${manageDate}.csv`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+
+
+  // =======================================
+  // MANAGE BOOKINGS - PLAIN TEXT (fallback only,
+  // used when the device can't share files)
+  // =======================================
+
+  const buildBookingsListText = () => {
+
+    let text = `🏨 Room Bookings - ${manageDate}\n\n`;
+
+    bookingsList.forEach((b, idx) => {
+
+      text +=
+        `${idx + 1}. Room ${b.roomNumber} - ${b.name} (${b.status})\n` +
+        `   Mobile: ${b.mobile} | ${String(b.checkIn).split("T")[0]} to ${
+          String(b.checkOut).split("T")[0]
+        }\n`;
+    });
+
+    return text;
+  };
+
+  const [bookingsPdfBusy, setBookingsPdfBusy] = useState(false);
+
+
+
+  // =======================================
+  // MANAGE BOOKINGS - DOWNLOAD AS PDF
+  // =======================================
+
+  const downloadBookingsPDF = () => {
+
+    if (!bookingsList.length) {
+      alert("Download करने के लिए कोई booking नहीं है");
+      return;
+    }
+
+    const pdf = generateBookingsPDF(bookingsList, manageDate);
+    pdf.save(`bookings-${manageDate}.pdf`);
+  };
+
+
+
+  // =======================================
+  // MANAGE BOOKINGS - SHARE LIST ON WHATSAPP (as PDF)
+  // Falls back to a plain text share if the device/browser
+  // can't share files (e.g. desktop without Web Share API).
+  // =======================================
+
+  const shareBookingsListOnWhatsapp = async () => {
+
+    if (!bookingsList.length) {
+      alert("Share करने के लिए कोई booking नहीं है");
+      return;
+    }
+
+    setBookingsPdfBusy(true);
+
+    try {
+
+      const pdf = generateBookingsPDF(bookingsList, manageDate);
+      const blob = pdf.output("blob");
+
+      const file = new File(
+        [blob],
+        `bookings-${manageDate}.pdf`,
+        { type: "application/pdf" }
+      );
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+
+        await navigator.share({
+          title: `Room Bookings - ${manageDate}`,
+          text: `Room Bookings - ${manageDate}`,
+          files: [file],
+        });
+
+      } else if (navigator.share) {
+
+        // can share text but not files -> share plain text instead
+        await navigator.share({
+          title: `Room Bookings - ${manageDate}`,
+          text: buildBookingsListText(),
+        });
+
+      } else {
+
+        // no Web Share API at all -> open whatsapp with text
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(buildBookingsListText())}`,
+          "_blank"
+        );
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+    } finally {
+
+      setBookingsPdfBusy(false);
+    }
+  };
+
+
+
+  // =======================================
+  // CANCEL BOOKING
+  // =======================================
+
+  const openCancelModal = (bookingId) => {
+    setCancelTarget(bookingId);
+    setCancelReason("");
+  };
+
+  const closeCancelModal = () => {
+    setCancelTarget(null);
+    setCancelReason("");
+  };
+
+  const confirmCancelBooking = async () => {
+
+    setCancelling(true);
+
+    try {
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "cancelBooking",
+          bookingId: cancelTarget,
+          reason: cancelReason,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        closeCancelModal();
+        searchBookingsByDate(); // refresh list
+
+      } else {
+
+        alert(data.message || "Cancel failed");
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      alert("Something went wrong");
+
+    } finally {
+
+      setCancelling(false);
+    }
+  };
+
+
+
   return (
 
     <div className="min-h-screen bg-orange-50 flex justify-center px-3 py-6 sm:px-4 sm:py-10">
@@ -284,11 +899,11 @@ const RoomBookingForm = () => {
         <div className="bg-orange-50 border rounded-2xl p-4 sm:p-6 mb-6">
 
           <h2 className="text-lg sm:text-2xl font-bold text-orange-600 mb-1">
-            Step 1 - Stay Details
+            Step 1 - Stay Dates
           </h2>
 
           <p className="text-gray-500 text-sm mb-5">
-            Dates और guests डाल कर उपलब्ध rooms search करें
+            Check-in / Check-out date डाल कर उपलब्ध rooms search करें
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -323,66 +938,6 @@ const RoomBookingForm = () => {
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Adult - Male
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={adultMale}
-                onChange={(e) => {
-                  setAdultMale(e.target.value);
-                  onStayDetailChange();
-                }}
-                className="border rounded-md px-3 py-2 w-full mt-1"
-                placeholder="0"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Adult - Female
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={adultFemale}
-                onChange={(e) => {
-                  setAdultFemale(e.target.value);
-                  onStayDetailChange();
-                }}
-                className="border rounded-md px-3 py-2 w-full mt-1"
-                placeholder="0"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Child
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={child}
-                onChange={(e) => {
-                  setChild(e.target.value);
-                  onStayDetailChange();
-                }}
-                className="border rounded-md px-3 py-2 w-full mt-1"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="flex items-end">
-              <p className="text-sm text-gray-600">
-                Total Guests:{" "}
-                <span className="font-bold text-orange-600">
-                  {totalGuests}
-                </span>
-              </p>
-            </div>
-
           </div>
 
           <button
@@ -412,7 +967,7 @@ const RoomBookingForm = () => {
             {availableRooms.length === 0 ? (
 
               <p className="text-red-600 text-sm mt-3">
-                इन dates / guest count के लिए कोई room उपलब्ध नहीं है।
+                इन dates के लिए कोई room उपलब्ध नहीं है।
               </p>
 
             ) : (
@@ -435,9 +990,9 @@ const RoomBookingForm = () => {
                       Room {r.roomNumber} - {r.roomType} (Capacity{" "}
                       {r.capacity}
                       {r.extraBedding > 0
-                        ? ` + ${r.extraBedding} extra bed`
+                        ? `, max ${r.extraBedding} extra bed`
                         : ""}
-                      , Max {r.maxOccupancy})
+                      )
                     </option>
                   ))}
 
@@ -462,7 +1017,7 @@ const RoomBookingForm = () => {
           <div className="bg-orange-50 border rounded-2xl p-4 sm:p-6 mb-10">
 
             <h2 className="text-lg sm:text-2xl font-bold text-orange-600 mb-5">
-              Step 3 - Guest Details
+              Step 3 - Guest & Booking Details
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -548,6 +1103,62 @@ const RoomBookingForm = () => {
 
               <div>
                 <label className="text-sm font-medium text-gray-700">
+                  Adult - Male
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={adultMale}
+                  onChange={(e) => setAdultMale(e.target.value)}
+                  className="border rounded-md px-3 py-2 w-full mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Adult - Female
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={adultFemale}
+                  onChange={(e) => setAdultFemale(e.target.value)}
+                  className="border rounded-md px-3 py-2 w-full mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Child
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={child}
+                  onChange={(e) => setChild(e.target.value)}
+                  className="border rounded-md px-3 py-2 w-full mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  Extra Bedding दिया (कितना)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={extraBedding}
+                  onChange={(e) => setExtraBedding(e.target.value)}
+                  className="border rounded-md px-3 py-2 w-full mt-1"
+                  placeholder="0"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700">
                   Room Booked By
                 </label>
                 <input
@@ -596,6 +1207,21 @@ const RoomBookingForm = () => {
               Booking ID: {bookingResult.bookingId}
             </p>
 
+            <button
+              onClick={shareBookingOnWhatsapp}
+              disabled={confirmationSharing}
+              className="mt-4 w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 rounded-md font-semibold"
+            >
+              {confirmationSharing
+                ? "तैयार हो रहा है..."
+                : "📤 Share on WhatsApp"}
+            </button>
+
+            <canvas
+              ref={bookingCanvasRef}
+              style={{ display: "none" }}
+            />
+
           </div>
 
         )}
@@ -606,7 +1232,7 @@ const RoomBookingForm = () => {
         {/* OCCUPANCY BY DATE */}
         {/* ======================================= */}
 
-        <div className="bg-orange-50 border rounded-2xl p-4 sm:p-6">
+        <div className="bg-orange-50 border rounded-2xl p-4 sm:p-6 mb-10">
 
           <h2 className="text-lg sm:text-2xl font-bold text-orange-600 mb-5">
             Room Status (Date wise)
@@ -681,7 +1307,219 @@ const RoomBookingForm = () => {
 
         </div>
 
+
+
+        {/* ======================================= */}
+        {/* MANAGE BOOKINGS (admin list + cancel) */}
+        {/* ======================================= */}
+
+        <div className="bg-orange-50 border rounded-2xl p-4 sm:p-6">
+
+          <h2 className="text-lg sm:text-2xl font-bold text-orange-600 mb-5">
+            Manage Bookings
+          </h2>
+
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+
+            <input
+              type="date"
+              value={manageDate}
+              onChange={(e) => setManageDate(e.target.value)}
+              className="border rounded-md px-4 py-2 w-full"
+            />
+
+            <button
+              onClick={searchBookingsByDate}
+              disabled={manageLoading}
+              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-6 py-2 rounded-md whitespace-nowrap"
+            >
+              {manageLoading ? "Searching..." : "Search"}
+            </button>
+
+          </div>
+
+          {manageSearched && bookingsList.length > 0 && (
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
+
+              <button
+                onClick={downloadBookingsCSV}
+                className="bg-black text-white px-5 py-2 rounded-md text-sm font-medium"
+              >
+                ⬇ Download CSV
+              </button>
+
+              <button
+                onClick={downloadBookingsPDF}
+                className="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-md text-sm font-medium"
+              >
+                ⬇ Download PDF
+              </button>
+
+              <button
+                onClick={shareBookingsListOnWhatsapp}
+                disabled={bookingsPdfBusy}
+                className="bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-5 py-2 rounded-md text-sm font-medium"
+              >
+                {bookingsPdfBusy ? "PDF बन रही है..." : "📤 Share PDF on WhatsApp"}
+              </button>
+
+            </div>
+
+          )}
+
+          {manageSearched && (
+
+            <div className="overflow-auto rounded-xl border bg-white">
+
+              <table className="w-full border-collapse text-xs sm:text-sm">
+
+                <thead>
+                  <tr className="bg-orange-100">
+                    <th className="border p-2">Name</th>
+                    <th className="border p-2">Mobile</th>
+                    <th className="border p-2">Room</th>
+                    <th className="border p-2">Check-in</th>
+                    <th className="border p-2">Check-out</th>
+                    <th className="border p-2">Status</th>
+                    <th className="border p-2">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {bookingsList.length > 0 ? (
+
+                    bookingsList.map((b, idx) => (
+
+                      <tr key={idx} className="hover:bg-orange-50">
+
+                        <td className="border p-2">{b.name}</td>
+                        <td className="border p-2">{b.mobile}</td>
+                        <td className="border p-2 font-semibold">
+                          {b.roomNumber}
+                        </td>
+                        <td className="border p-2">
+                          {String(b.checkIn).split("T")[0]}
+                        </td>
+                        <td className="border p-2">
+                          {String(b.checkOut).split("T")[0]}
+                        </td>
+                        <td className="border p-2">
+
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              b.status === "Active"
+                                ? "bg-green-100 text-green-700"
+                                : b.status === "Cancelled"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {b.status}
+                          </span>
+
+                        </td>
+                        <td className="border p-2 text-center">
+
+                          {b.status === "Active" ? (
+
+                            <button
+                              onClick={() => openCancelModal(b.bookingId)}
+                              className="text-red-600 underline text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+
+                          ) : (
+                            "-"
+                          )}
+
+                        </td>
+
+                      </tr>
+
+                    ))
+
+                  ) : (
+
+                    <tr>
+                      <td colSpan="7" className="text-center p-5">
+                        No Bookings Found
+                      </td>
+                    </tr>
+
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          )}
+
+        </div>
+
       </div>
+
+
+
+      {/* ======================================= */}
+      {/* CANCEL CONFIRMATION MODAL */}
+      {/* ======================================= */}
+
+      {cancelTarget && (
+
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
+
+          <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md">
+
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Cancel Booking?
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to cancel this room booking?
+            </p>
+
+            <label className="text-sm font-medium text-gray-700">
+              Reason (optional)
+            </label>
+
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={3}
+              className="border rounded-md px-3 py-2 w-full mt-1"
+              placeholder="Cancel करने की वजह (optional)"
+            />
+
+            <div className="flex gap-3 mt-5">
+
+              <button
+                onClick={closeCancelModal}
+                disabled={cancelling}
+                className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-md"
+              >
+                No, Keep It
+              </button>
+
+              <button
+                onClick={confirmCancelBooking}
+                disabled={cancelling}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-4 py-2 rounded-md"
+              >
+                {cancelling ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );
