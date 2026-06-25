@@ -12,6 +12,15 @@
 import React, { useState, useRef } from "react";
 import jsPDF from "jspdf";
 
+// standard checkout time shown alongside the checkout date
+const CHECKOUT_TIME_LABEL = "11:00 AM";
+
+// Trust's donation QR code (static image) - same QR is embedded into
+// every booking-confirmation share. Place the file at this path inside
+// your project's public/ folder (e.g. public/qr-code.png), so it's
+// served at this exact URL.
+const QR_CODE_IMAGE_PATH = "/qr-code.png";
+
 // =======================================
 // CHANGE THIS to your deployed Apps Script Web App URL
 // =======================================
@@ -25,7 +34,7 @@ const API_URL =
 // correctly) then embedded into the PDF as an image.
 // =======================================
 
-const PDF_PAGE_WIDTH = 800;
+const PDF_PAGE_WIDTH = 1000;
 const PDF_PAGE_HEIGHT = 1000;
 const ROWS_PER_PDF_PAGE = 12;
 
@@ -60,11 +69,12 @@ const drawBookingsPageCanvas = (pageRows, pageNum, totalPages, dateLabel) => {
 
   const col = {
     name: 40,
-    mobile: 230,
-    room: 360,
-    checkIn: 440,
-    checkOut: 570,
+    mobile: 220,
+    room: 350,
+    checkIn: 420,
+    checkOut: 540,
     status: 700,
+    checkoutTime: 800,
   };
 
   let y = 140;
@@ -79,6 +89,7 @@ const drawBookingsPageCanvas = (pageRows, pageNum, totalPages, dateLabel) => {
   ctx.fillText("Check-in", col.checkIn, y);
   ctx.fillText("Check-out", col.checkOut, y);
   ctx.fillText("Status", col.status, y);
+  ctx.fillText("Checkout Time", col.checkoutTime, y);
 
   ctx.strokeStyle = "#fdba74";
   ctx.lineWidth = 2;
@@ -88,12 +99,12 @@ const drawBookingsPageCanvas = (pageRows, pageNum, totalPages, dateLabel) => {
   ctx.stroke();
 
   y += 50;
-  ctx.font = "17px Arial";
+  ctx.font = "16px Arial";
 
   pageRows.forEach((b) => {
 
     ctx.fillStyle = "#111827";
-    ctx.fillText(truncateText(b.name, 18), col.name, y);
+    ctx.fillText(truncateText(b.name, 16), col.name, y);
     ctx.fillText(String(b.mobile || ""), col.mobile, y);
     ctx.fillText(String(b.roomNumber), col.room, y);
     ctx.fillText(String(b.checkIn).split("T")[0], col.checkIn, y);
@@ -107,6 +118,9 @@ const drawBookingsPageCanvas = (pageRows, pageNum, totalPages, dateLabel) => {
         : "#6b7280";
 
     ctx.fillText(b.status, col.status, y);
+
+    ctx.fillStyle = "#111827";
+    ctx.fillText(b.checkoutTime || "-", col.checkoutTime, y);
 
     y += 42;
   });
@@ -192,6 +206,10 @@ const RoomBookingForm = () => {
   const [cancelTarget, setCancelTarget] = useState(null); // bookingId
   const [cancelReason, setCancelReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
+
+  // ---- checkout modal ----
+  const [checkoutTarget, setCheckoutTarget] = useState(null); // bookingId
+  const [checkingOut, setCheckingOut] = useState(false);
 
   // ---- canvas used to build the booking-confirmation share image ----
   const bookingCanvasRef = useRef(null);
@@ -506,7 +524,7 @@ const RoomBookingForm = () => {
     const ctx = canvas.getContext("2d");
 
     const width = 640;
-    const height = 480;
+    const height = 760; // enlarged to fit the QR code block
 
     canvas.width = width;
     canvas.height = height;
@@ -555,7 +573,7 @@ const RoomBookingForm = () => {
       `Name: ${bookingResult.name}`,
       `Mobile: ${bookingResult.mobile}`,
       `Check-in: ${bookingResult.checkIn}`,
-      `Check-out: ${bookingResult.checkOut}`,
+      `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}`,
       `Booking ID: ${bookingResult.bookingId}`,
     ];
 
@@ -566,16 +584,52 @@ const RoomBookingForm = () => {
       y += 42;
     });
 
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#2563eb";
-    ctx.font = "16px Arial";
-    ctx.fillText(
-      "होम डिलिवरी: वायु पुत्र पूजा की दुकान",
-      width / 2,
-      height - 30
-    );
+    const afterDetailsY = y + 10;
 
-    callback(canvas);
+    ctx.strokeStyle = "#bbf7d0";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, afterDetailsY);
+    ctx.lineTo(width - 40, afterDetailsY);
+    ctx.stroke();
+
+    // QR code block (Trust's donation QR - same static image every time)
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#16a34a";
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("Donation / दान हेतु स्कैन करें", width / 2, afterDetailsY + 34);
+
+    const qrSize = 260;
+    const qrX = (width - qrSize) / 2;
+    const qrY = afterDetailsY + 50;
+
+    const finishWithFooter = () => {
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#2563eb";
+      ctx.font = "16px Arial";
+      ctx.fillText(
+        "Shri Sankat Mochan Balaji Mandal",
+        width / 2,
+        height - 30
+      );
+
+      callback(canvas);
+    };
+
+    const qrImg = new Image();
+
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      finishWithFooter();
+    };
+
+    qrImg.onerror = () => {
+      // QR asset missing - still share the rest of the confirmation
+      finishWithFooter();
+    };
+
+    qrImg.src = QR_CODE_IMAGE_PATH;
   };
 
 
@@ -595,7 +649,7 @@ const RoomBookingForm = () => {
       `Name: ${bookingResult.name}\n` +
       `Room No: ${bookingResult.room}\n` +
       `Check-in: ${bookingResult.checkIn}\n` +
-      `Check-out: ${bookingResult.checkOut}\n` +
+      `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}\n` +
       `Booking ID: ${bookingResult.bookingId}`;
 
     try {
@@ -682,6 +736,7 @@ const RoomBookingForm = () => {
       "AdultFemale",
       "Child",
       "ExtraBedding",
+      "CheckoutTime",
     ];
 
     let csv = headers.join(",") + "\n";
@@ -700,6 +755,7 @@ const RoomBookingForm = () => {
         b.adultFemale,
         b.child,
         b.extraBedding,
+        b.checkoutTime || "",
       ];
 
       csv +=
@@ -875,6 +931,57 @@ const RoomBookingForm = () => {
     } finally {
 
       setCancelling(false);
+    }
+  };
+
+
+
+  // =======================================
+  // CHECK-OUT BOOKING (manual)
+  // =======================================
+
+  const openCheckoutModal = (bookingId) => {
+    setCheckoutTarget(bookingId);
+  };
+
+  const closeCheckoutModal = () => {
+    setCheckoutTarget(null);
+  };
+
+  const confirmCheckoutBooking = async () => {
+
+    setCheckingOut(true);
+
+    try {
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action: "checkoutBooking",
+          bookingId: checkoutTarget,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        closeCheckoutModal();
+        searchBookingsByDate(); // refresh list
+
+      } else {
+
+        alert(data.message || "Check-out failed");
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      alert("Something went wrong");
+
+    } finally {
+
+      setCheckingOut(false);
     }
   };
 
@@ -1382,6 +1489,7 @@ const RoomBookingForm = () => {
                     <th className="border p-2">Check-in</th>
                     <th className="border p-2">Check-out</th>
                     <th className="border p-2">Status</th>
+                    <th className="border p-2">Checkout Time</th>
                     <th className="border p-2">Action</th>
                   </tr>
                 </thead>
@@ -1420,16 +1528,28 @@ const RoomBookingForm = () => {
                           </span>
 
                         </td>
-                        <td className="border p-2 text-center">
+                        <td className="border p-2">
+                          {b.checkoutTime || "-"}
+                        </td>
+                        <td className="border p-2 text-center whitespace-nowrap">
 
                           {b.status === "Active" ? (
 
-                            <button
-                              onClick={() => openCancelModal(b.bookingId)}
-                              className="text-red-600 underline text-xs font-medium"
-                            >
-                              Cancel
-                            </button>
+                            <>
+                              <button
+                                onClick={() => openCheckoutModal(b.bookingId)}
+                                className="text-green-600 underline text-xs font-medium mr-3"
+                              >
+                                Check-out
+                              </button>
+
+                              <button
+                                onClick={() => openCancelModal(b.bookingId)}
+                                className="text-red-600 underline text-xs font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </>
 
                           ) : (
                             "-"
@@ -1444,7 +1564,7 @@ const RoomBookingForm = () => {
                   ) : (
 
                     <tr>
-                      <td colSpan="7" className="text-center p-5">
+                      <td colSpan="8" className="text-center p-5">
                         No Bookings Found
                       </td>
                     </tr>
@@ -1511,6 +1631,52 @@ const RoomBookingForm = () => {
                 className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-4 py-2 rounded-md"
               >
                 {cancelling ? "Cancelling..." : "Yes, Cancel"}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
+
+
+
+      {/* ======================================= */}
+      {/* CHECK-OUT CONFIRMATION MODAL */}
+      {/* ======================================= */}
+
+      {checkoutTarget && (
+
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center px-4 z-50">
+
+          <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-md">
+
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              Check-out Booking?
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to check-out this booking now?
+            </p>
+
+            <div className="flex gap-3 mt-5">
+
+              <button
+                onClick={closeCheckoutModal}
+                disabled={checkingOut}
+                className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-md"
+              >
+                No
+              </button>
+
+              <button
+                onClick={confirmCheckoutBooking}
+                disabled={checkingOut}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-4 py-2 rounded-md"
+              >
+                {checkingOut ? "Checking out..." : "Yes, Check-out"}
               </button>
 
             </div>

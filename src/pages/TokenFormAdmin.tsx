@@ -594,7 +594,7 @@ const TokenFormAdmin = () => {
     ctx.font = "18px Arial";
 
     ctx.fillText(
-      "होम डिलिवरी: वायु पुत्र पूजा की दुकान",
+      "Shri Sankat Mochan Balaji Mandal",
       width / 2,
       y + 20
     );
