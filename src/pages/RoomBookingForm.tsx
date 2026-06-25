@@ -524,109 +524,133 @@ const RoomBookingForm = () => {
     const ctx = canvas.getContext("2d");
 
     const width = 640;
-    const height = 760; // enlarged to fit the QR code block
 
-    canvas.width = width;
-    canvas.height = height;
+    // ---- everything below is drawn once we know the QR image's
+    // real aspect ratio, so it can be sized/placed without
+    // distortion or overlapping the footer ----
 
-    // background
-    ctx.fillStyle = "#f0fdf4";
-    ctx.fillRect(0, 0, width, height);
+    const drawCard = (qrImg) => {
 
-    // border
-    ctx.strokeStyle = "#16a34a";
-    ctx.lineWidth = 6;
-    ctx.strokeRect(10, 10, width - 20, height - 20);
+      // fixed layout up to the QR block
+      const headerBottom = 230 + 5 * 42; // 5 detail lines starting at y=230
+      const afterDetailsY = headerBottom + 10;
+      const qrLabelY = afterDetailsY + 30;
+      const qrTop = qrLabelY + 20;
 
-    // header
-    ctx.fillStyle = "#16a34a";
-    ctx.textAlign = "center";
-    ctx.font = "bold 28px Arial";
-    ctx.fillText("Room Booking Confirmed ✅", width / 2, 60);
+      // QR sizing - fit a generous width, keep the image's own
+      // aspect ratio so its internal text/logo isn't squashed
+      const qrDisplayWidth = 360;
+      let qrDisplayHeight = 0;
 
-    ctx.fillStyle = "#ea580c";
-    ctx.font = "bold 22px Arial";
-    ctx.fillText(
-      "Shri Sankat Mochan Balaji Charitable Trust",
-      width / 2,
-      95
-    );
+      if (qrImg) {
+        const ratio = qrImg.naturalHeight / qrImg.naturalWidth;
+        qrDisplayHeight = Math.round(qrDisplayWidth * ratio);
+      }
 
-    ctx.strokeStyle = "#bbf7d0";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(40, 115);
-    ctx.lineTo(width - 40, 115);
-    ctx.stroke();
+      const footerGap = 30;
+      const footerY = qrImg
+        ? qrTop + qrDisplayHeight + footerGap
+        : qrTop + footerGap;
 
-    // room number - big
-    ctx.fillStyle = "#111827";
-    ctx.font = "bold 34px Arial";
-    ctx.fillText(`Room No. ${bookingResult.room}`, width / 2, 170);
+      const height = footerY + 30; // bottom padding under footer
 
-    // details
-    ctx.textAlign = "left";
-    ctx.font = "22px Arial";
-    ctx.fillStyle = "#1f2937";
+      canvas.width = width;
+      canvas.height = height;
 
-    const lines = [
-      `Name: ${bookingResult.name}`,
-      `Mobile: ${bookingResult.mobile}`,
-      `Check-in: ${bookingResult.checkIn}`,
-      `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}`,
-      `Booking ID: ${bookingResult.bookingId}`,
-    ];
+      // background
+      ctx.fillStyle = "#f0fdf4";
+      ctx.fillRect(0, 0, width, height);
 
-    let y = 230;
+      // border
+      ctx.strokeStyle = "#16a34a";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(10, 10, width - 20, height - 20);
 
-    lines.forEach((line) => {
-      ctx.fillText(line, 60, y);
-      y += 42;
-    });
+      // header
+      ctx.fillStyle = "#16a34a";
+      ctx.textAlign = "center";
+      ctx.font = "bold 28px Arial";
+      ctx.fillText("Room Booking Confirmed ✅", width / 2, 60);
 
-    const afterDetailsY = y + 10;
+      ctx.fillStyle = "#ea580c";
+      ctx.font = "bold 22px Arial";
+      ctx.fillText(
+        "Shree Maruti Nandan Dham, Mehandipur Balaji",
+        width / 2,
+        95
+      );
 
-    ctx.strokeStyle = "#bbf7d0";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(40, afterDetailsY);
-    ctx.lineTo(width - 40, afterDetailsY);
-    ctx.stroke();
+      ctx.strokeStyle = "#bbf7d0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, 115);
+      ctx.lineTo(width - 40, 115);
+      ctx.stroke();
 
-    // QR code block (Trust's donation QR - same static image every time)
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#16a34a";
-    ctx.font = "bold 18px Arial";
-    ctx.fillText("Donation / दान हेतु स्कैन करें", width / 2, afterDetailsY + 34);
+      // room number - big
+      ctx.fillStyle = "#111827";
+      ctx.font = "bold 34px Arial";
+      ctx.fillText(`Room No. ${bookingResult.room}`, width / 2, 170);
 
-    const qrSize = 260;
-    const qrX = (width - qrSize) / 2;
-    const qrY = afterDetailsY + 50;
+      // details
+      ctx.textAlign = "left";
+      ctx.font = "22px Arial";
+      ctx.fillStyle = "#1f2937";
 
-    const finishWithFooter = () => {
+      const lines = [
+        `Name: ${bookingResult.name}`,
+        `Mobile: ${bookingResult.mobile}`,
+        `Check-in: ${bookingResult.checkIn}`,
+        `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}`,
+        `Booking ID: ${bookingResult.bookingId}`,
+      ];
 
+      let y = 230;
+
+      lines.forEach((line) => {
+        ctx.fillText(line, 60, y);
+        y += 42;
+      });
+
+      ctx.strokeStyle = "#bbf7d0";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(40, afterDetailsY);
+      ctx.lineTo(width - 40, afterDetailsY);
+      ctx.stroke();
+
+      // QR label
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#16a34a";
+      ctx.font = "bold 16px Arial";
+      ctx.fillText("Thank You for booking!!", width / 2, qrLabelY);
+
+      // QR image (Trust's donation QR - same static image every time),
+      // drawn at its own aspect ratio so it isn't stretched/squashed
+      if (qrImg) {
+        const qrX = (width - qrDisplayWidth) / 2;
+        ctx.drawImage(qrImg, qrX, qrTop, qrDisplayWidth, qrDisplayHeight);
+      }
+
+      // footer - placed dynamically below the QR, never overlapping it
       ctx.textAlign = "center";
       ctx.fillStyle = "#2563eb";
       ctx.font = "16px Arial";
-      ctx.fillText(
-        "Shri Sankat Mochan Balaji Mandal",
-        width / 2,
-        height - 30
-      );
+      ctx.fillText("Shri Sankat Mochan Balaji Mandal", width / 2, footerY);
 
       callback(canvas);
     };
 
     const qrImg = new Image();
+    qrImg.crossOrigin = "anonymous";
 
-    qrImg.onload = () => {
-      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-      finishWithFooter();
-    };
+    qrImg.onload = () => drawCard(qrImg);
 
-    qrImg.onerror = () => {
-      // QR asset missing - still share the rest of the confirmation
-      finishWithFooter();
+    qrImg.onerror = (err) => {
+      // QR asset missing/blocked - log so it's visible in console,
+      // but still share the rest of the confirmation without the QR
+      console.log("QR image failed to load:", QR_CODE_IMAGE_PATH, err);
+      drawCard(null);
     };
 
     qrImg.src = QR_CODE_IMAGE_PATH;
@@ -652,6 +676,8 @@ const RoomBookingForm = () => {
       `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}\n` +
       `Booking ID: ${bookingResult.bookingId}`;
 
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     try {
 
       createBookingConfirmationImage((canvas) => {
@@ -666,7 +692,14 @@ const RoomBookingForm = () => {
               { type: "image/png" }
             );
 
+            // Desktop/laptop browsers usually have no share targets
+            // (no WhatsApp etc registered), so navigator.share() just
+            // opens an empty sheet that the user closes -> AbortError.
+            // On desktop, skip straight to: download image + open
+            // WhatsApp Web with the text, so the user can attach
+            // the downloaded image manually.
             if (
+              isMobile &&
               navigator.canShare &&
               navigator.canShare({ files: [file] })
             ) {
@@ -677,7 +710,7 @@ const RoomBookingForm = () => {
                 files: [file],
               });
 
-            } else if (navigator.share) {
+            } else if (isMobile && navigator.share) {
 
               await navigator.share({
                 title: "Room Booking Confirmed",
@@ -686,6 +719,15 @@ const RoomBookingForm = () => {
 
             } else {
 
+              // download the image
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "booking-confirmation.png";
+              link.click();
+              URL.revokeObjectURL(url);
+
+              // open WhatsApp Web with the text (image needs manual attach)
               window.open(
                 `https://wa.me/?text=${encodeURIComponent(shareText)}`,
                 "_blank"
@@ -694,7 +736,12 @@ const RoomBookingForm = () => {
 
           } catch (err) {
 
-            console.log(err);
+            if (err && err.name === "AbortError") {
+              // user closed the native share sheet - not an error
+              console.log("Share cancelled by user");
+            } else {
+              console.log(err);
+            }
 
           } finally {
 

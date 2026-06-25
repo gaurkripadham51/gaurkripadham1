@@ -4,6 +4,7 @@
 
 import React, { useState, useRef } from "react";
 import QRCode from "react-qr-code";
+import html2canvas from "html2canvas";
 
 // =======================================
 // AAVASHYAK PUJA SAMAGRI - CATEGORY DATA
@@ -42,8 +43,8 @@ const SAMAGRI_CATEGORIES = [
       { name: "सिन्दूर (चोले वाला)", qty: "100 ग्रा." },
       { name: "चमेली का तेल", qty: "100 ग्रा." },
       { name: "जनेऊ", qty: "1 नग" },
-      { name: "चांदी का वर्क", qty: "1 पैकेट" },
-      { name: "इलायची दाना (हिमालय कं. का वर्क न लें)", qty: "1 पैकेट" },
+      { name: "चांदी का वर्क (हिमालय कं. का वर्क न लें)", qty: "1 पैकेट" },
+      { name: "इलायची दाना", qty: "1 पैकेट" },
       { name: "गुड़-चने का प्रसाद", qty: "1 पैकेट" },
     ],
   },
@@ -76,6 +77,34 @@ const TokenFormAdmin = () => {
     useState(false);
 
   const samagriCanvasRef = useRef(null);
+
+  // ---- Admin "Generate Token" state ----
+
+  const [tokenForm, setTokenForm] = useState({
+    name: "",
+    city: "",
+    mobile: "",
+    members: "",
+  });
+
+  const [tokenDate, setTokenDate] = useState("");
+
+  const [tokenGenLoading, setTokenGenLoading] =
+    useState(false);
+
+  const [generatedTokenNumber, setGeneratedTokenNumber] =
+    useState("");
+
+  const [tokenGenError, setTokenGenError] =
+    useState("");
+
+  // snapshot of the fields used to generate the last token
+  // (form gets cleared after success, popup still needs these)
+  const [lastGeneratedToken, setLastGeneratedToken] =
+    useState(null);
+
+  const [showTokenPopup, setShowTokenPopup] =
+    useState(false);
 
 
 
@@ -170,6 +199,183 @@ const TokenFormAdmin = () => {
       `https://shrisankatmochalmandal.netlify.app/TokenForm?date=${formattedDate}`;
 
     setGeneratedLink(url);
+  };
+
+
+
+  // =======================================
+  // ADMIN - GENERATE TOKEN (any date)
+  // Reuses the same fields/API call pattern as TokenForm.jsx's
+  // generateToken, plus a date field so admin can generate a
+  // token for any date, not just today.
+  // =======================================
+
+  const handleTokenFormChange = (e) => {
+
+    setTokenForm({
+      ...tokenForm,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const generateTokenAdmin = async () => {
+
+    setTokenGenError("");
+
+    if (
+      !tokenForm.name ||
+      !tokenForm.city ||
+      !tokenForm.mobile ||
+      !tokenForm.members ||
+      !tokenDate
+    ) {
+
+      setTokenGenError("Please fill all fields including date");
+      return;
+    }
+
+    try {
+
+      setTokenGenLoading(true);
+
+      // tokenDate comes from <input type="date"> as "YYYY-MM-DD",
+      // convert to "dd-MM-yyyy" (same convention used elsewhere
+      // in this app, e.g. searchData's formattedDate / TokenForm's
+      // sheetName) so the backend can create the token under the
+      // correct date instead of defaulting to today.
+      const parts = tokenDate.split("-");
+      const sheetName = `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+      const formData = new URLSearchParams();
+
+      Object.entries(tokenForm).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      formData.append("sheetName", sheetName);
+      formData.append("date", sheetName);
+
+      const response = await fetch(API_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        setGeneratedTokenNumber(data.tokenNumber);
+
+        setLastGeneratedToken({
+          name: tokenForm.name,
+          city: tokenForm.city,
+          mobile: tokenForm.mobile,
+          members: tokenForm.members,
+          token: data.tokenNumber,
+          date: sheetName,
+        });
+
+        setShowTokenPopup(true);
+
+        setTokenForm({
+          name: "",
+          city: "",
+          mobile: "",
+          members: "",
+        });
+
+        setTokenDate("");
+
+      } else {
+
+        setGeneratedTokenNumber("");
+        setTokenGenError(data.message || "Failed to generate token");
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      setTokenGenError("Something went wrong");
+
+    } finally {
+
+      setTokenGenLoading(false);
+    }
+  };
+
+
+
+  // =======================================
+  // SHARE GENERATED TOKEN (admin)
+  // Same pattern as TokenForm.jsx's shareToken - image share on
+  // mobile, wa.me text link fallback on desktop. Includes every
+  // detail (name, city, mobile, members, token, date).
+  // =======================================
+
+  const shareTokenAdmin = async () => {
+
+    if (!lastGeneratedToken) return;
+
+    try {
+
+      const isMobile =
+        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isMobile) {
+
+        const element =
+          document.getElementById("admin-token-share-card");
+
+        const canvas = await html2canvas(element);
+
+        canvas.toBlob(async (blob) => {
+
+          const file = new File(
+            [blob],
+            "token.png",
+            { type: "image/png" }
+          );
+
+          if (
+            navigator.canShare &&
+            navigator.canShare({ files: [file] })
+          ) {
+
+            await navigator.share({
+              title: "Token Generated",
+              text: "Your token has been generated",
+              files: [file],
+            });
+
+          } else {
+
+            alert("Sharing not supported");
+          }
+
+        }, "image/png");
+
+      } else {
+
+        const text =
+          `Token Generated Successfully\n\n` +
+          `Name: ${lastGeneratedToken.name}\n` +
+          `City: ${lastGeneratedToken.city}\n` +
+          `Mobile: ${lastGeneratedToken.mobile}\n` +
+          `Members: ${lastGeneratedToken.members}\n` +
+          `Token Number: ${lastGeneratedToken.token}\n` +
+          `Date: ${lastGeneratedToken.date}`;
+
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(text)}`,
+          "_blank"
+        );
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      alert("Failed to share token");
+    }
   };
 
 
@@ -594,7 +800,7 @@ const TokenFormAdmin = () => {
     ctx.font = "18px Arial";
 
     ctx.fillText(
-      "Shri Sankat Mochan Balaji Mandal",
+      "होम डिलिवरी: वायु पुत्र पूजा की दुकान",
       width / 2,
       y + 20
     );
@@ -824,6 +1030,81 @@ const TokenFormAdmin = () => {
             </div>
 
           )}
+
+        </div>
+
+
+
+        {/* ======================================= */}
+        {/* ADMIN - GENERATE TOKEN (any date) */}
+        {/* ======================================= */}
+
+        <div className="bg-orange-50 border rounded-2xl p-6 mb-10">
+
+          <h2 className="text-2xl font-bold text-orange-600 mb-5">
+            Generate Token
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <input
+              type="text"
+              name="name"
+              placeholder="Name"
+              value={tokenForm.name}
+              onChange={handleTokenFormChange}
+              className="border rounded-md px-4 py-2 w-full"
+            />
+
+            <input
+              type="text"
+              name="city"
+              placeholder="City"
+              value={tokenForm.city}
+              onChange={handleTokenFormChange}
+              className="border rounded-md px-4 py-2 w-full"
+            />
+
+            <input
+              type="text"
+              name="mobile"
+              placeholder="Mobile Number"
+              value={tokenForm.mobile}
+              onChange={handleTokenFormChange}
+              className="border rounded-md px-4 py-2 w-full"
+            />
+
+            <input
+              type="number"
+              name="members"
+              placeholder="Members"
+              value={tokenForm.members}
+              onChange={handleTokenFormChange}
+              className="border rounded-md px-4 py-2 w-full"
+            />
+
+            <input
+              type="date"
+              value={tokenDate}
+              onChange={(e) => setTokenDate(e.target.value)}
+              className="border rounded-md px-4 py-2 w-full md:col-span-2"
+            />
+
+          </div>
+
+          {tokenGenError && (
+            <p className="text-red-600 text-sm mt-3">
+              {tokenGenError}
+            </p>
+          )}
+
+          <button
+            onClick={generateTokenAdmin}
+            disabled={tokenGenLoading}
+            className="mt-5 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-6 py-2 rounded-md"
+          >
+            {tokenGenLoading ? "Generating..." : "Generate Token"}
+          </button>
 
         </div>
 
@@ -1161,6 +1442,78 @@ const TokenFormAdmin = () => {
         </div>
 
       </div>
+
+
+
+      {/* ======================================= */}
+      {/* ADMIN GENERATE TOKEN - SUCCESS POPUP */}
+      {/* same UI as TokenForm.jsx's success popup */}
+      {/* ======================================= */}
+
+      {showTokenPopup && lastGeneratedToken && (
+
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+
+          <div
+            id="admin-token-share-card"
+            className="bg-white p-8 rounded-2xl shadow-2xl text-center w-80"
+          >
+
+            <div className="text-6xl mb-3">
+              🎉
+            </div>
+
+            <h2 className="text-2xl font-bold text-green-600">
+              Token Generated
+            </h2>
+
+            <p className="mt-4 text-gray-600">
+              Your Token Number
+            </p>
+
+            <p className="text-4xl font-bold text-orange-600 mt-2">
+              {lastGeneratedToken.token}
+            </p>
+
+            <div className="mt-5 text-left text-sm text-gray-700 space-y-1">
+
+              <p><span className="font-semibold">Name:</span> {lastGeneratedToken.name}</p>
+              <p><span className="font-semibold">City:</span> {lastGeneratedToken.city}</p>
+              <p><span className="font-semibold">Mobile:</span> {lastGeneratedToken.mobile}</p>
+              <p><span className="font-semibold">Members:</span> {lastGeneratedToken.members}</p>
+              <p><span className="font-semibold">Date:</span> {lastGeneratedToken.date}</p>
+
+            </div>
+
+            <div className="flex flex-col gap-3 mt-6">
+
+              <button
+                onClick={shareTokenAdmin}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+              >
+                Share Token
+              </button>
+
+              <button
+                onClick={() => {
+
+                  setShowTokenPopup(false);
+                  setGeneratedTokenNumber("");
+                  setLastGeneratedToken(null);
+
+                }}
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg"
+              >
+                Close
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );
