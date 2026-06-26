@@ -9,8 +9,30 @@
 // Backend: Google Apps Script + Google Sheet
 // =======================================
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
+
+// =======================================
+// dataUrlToBlob - synchronous canvas-dataURL -> Blob conversion.
+// canvas.toBlob() is async, and on some mobile browsers (esp. iOS
+// Safari) the small delay is enough to lose "user activation" on
+// the click, which silently breaks navigator.share()/window.open().
+// canvas.toDataURL() is synchronous, so converting it this way keeps
+// the whole share flow inside the original click's activation window.
+// =======================================
+
+const dataUrlToBlob = (dataUrl) => {
+  const [header, base64] = dataUrl.split(",");
+  const mimeMatch = header.match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/png";
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+};
 
 // standard checkout time shown alongside the checkout date
 const CHECKOUT_TIME_LABEL = "11:00 AM";
@@ -214,6 +236,32 @@ const RoomBookingForm = () => {
   // ---- canvas used to build the booking-confirmation share image ----
   const bookingCanvasRef = useRef(null);
   const [confirmationSharing, setConfirmationSharing] = useState(false);
+
+  // Preload the donation QR once on mount, so by the time the admin
+  // taps "Share", the image is already decoded and the whole canvas
+  // draw + share can run synchronously inside the click (see note on
+  // dataUrlToBlob above for why that matters on mobile).
+  const qrImageRef = useRef(null); // holds the loaded <img>, or null if it failed
+  const qrImageReadyRef = useRef(false); // true once load/error has settled
+
+  useEffect(() => {
+
+    const img = new Image();
+
+    img.onload = () => {
+      qrImageRef.current = img;
+      qrImageReadyRef.current = true;
+    };
+
+    img.onerror = (err) => {
+      console.log("QR image failed to load:", QR_CODE_IMAGE_PATH, err);
+      qrImageRef.current = null;
+      qrImageReadyRef.current = true;
+    };
+
+    img.src = QR_CODE_IMAGE_PATH;
+
+  }, []);
 
 
 
@@ -641,6 +689,15 @@ const RoomBookingForm = () => {
       callback(canvas);
     };
 
+    // if the QR was already preloaded on mount, draw synchronously -
+    // this is the path used by Share (keeps user-activation intact)
+    if (qrImageReadyRef.current) {
+      drawCard(qrImageRef.current);
+      return;
+    }
+
+    // fallback (e.g. Share tapped before the preload finished) - load
+    // it now, async, same as before
     const qrImg = new Image();
 
     // NOTE: QR_CODE_IMAGE_PATH is a root-relative path ("/qr-code.png"),
@@ -649,12 +706,18 @@ const RoomBookingForm = () => {
     // browsers refuse to load an already-cached copy of the image that
     // wasn't fetched in CORS mode, which silently drops the QR).
 
-    qrImg.onload = () => drawCard(qrImg);
+    qrImg.onload = () => {
+      qrImageRef.current = qrImg;
+      qrImageReadyRef.current = true;
+      drawCard(qrImg);
+    };
 
     qrImg.onerror = (err) => {
       // QR asset missing/blocked - log so it's visible in console,
       // but still share the rest of the confirmation without the QR
       console.log("QR image failed to load:", QR_CODE_IMAGE_PATH, err);
+      qrImageRef.current = null;
+      qrImageReadyRef.current = true;
       drawCard(null);
     };
 
@@ -667,7 +730,7 @@ const RoomBookingForm = () => {
   // SHARE BOOKING CONFIRMATION ON WHATSAPP
   // =======================================
 
-  const shareBookingOnWhatsapp = async () => {
+  const shareBookingOnWhatsapp = () => {
 
     if (!bookingResult) return;
 
@@ -683,78 +746,87 @@ const RoomBookingForm = () => {
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+    const finishShare = (canvas) => {
+
+      try {
+
+        // toDataURL is synchronous (unlike toBlob), so this whole
+        // function runs inside the same tick as the click - keeps
+        // "user activation" alive for navigator.share()/window.open()
+        // on strict mobile browsers (esp. iOS Safari).
+        const dataUrl = canvas.toDataURL("image/png");
+        const blob = dataUrlToBlob(dataUrl);
+
+        const file = new File(
+          [blob],
+          "booking-confirmation.png",
+          { type: "image/png" }
+        );
+
+        // Desktop/laptop browsers usually have no share targets
+        // (no WhatsApp etc registered), so navigator.share() just
+        // opens an empty sheet that the user closes -> AbortError.
+        // Some mobile browsers also can't share files via
+        // navigator.share (canShare returns false for the PNG) -
+        // in that case we must NOT fall back to a text-only share,
+        // otherwise the QR image never reaches WhatsApp at all.
+        // So: only the true file-share path uses navigator.share;
+        // every other case (desktop, or mobile without file-share
+        // support) downloads the image + opens WhatsApp with the
+        // text, so the user always has the image to attach.
+        if (
+          isMobile &&
+          navigator.canShare &&
+          navigator.canShare({ files: [file] })
+        ) {
+
+          navigator
+            .share({
+              title: "Room Booking Confirmed",
+              text: shareText,
+              files: [file],
+            })
+            .catch((err) => {
+
+              if (err && err.name === "AbortError") {
+                console.log("Share cancelled by user");
+              } else {
+                console.log(err);
+              }
+            })
+            .finally(() => setConfirmationSharing(false));
+
+          return;
+        }
+
+        // download the image (works on both mobile and desktop)
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "booking-confirmation.png";
+        link.click();
+        URL.revokeObjectURL(url);
+
+        // open WhatsApp (Web on desktop, app on mobile) with the
+        // text - image needs to be attached manually from the
+        // just-downloaded file / gallery
+        window.open(
+          `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+          "_blank"
+        );
+
+        setConfirmationSharing(false);
+
+      } catch (err) {
+
+        console.log(err);
+        setConfirmationSharing(false);
+      }
+    };
+
     try {
 
-      createBookingConfirmationImage((canvas) => {
-
-        canvas.toBlob(async (blob) => {
-
-          try {
-
-            const file = new File(
-              [blob],
-              "booking-confirmation.png",
-              { type: "image/png" }
-            );
-
-            // Desktop/laptop browsers usually have no share targets
-            // (no WhatsApp etc registered), so navigator.share() just
-            // opens an empty sheet that the user closes -> AbortError.
-            // Some mobile browsers also can't share files via
-            // navigator.share (canShare returns false for the PNG) -
-            // in that case we must NOT fall back to a text-only share,
-            // otherwise the QR image never reaches WhatsApp at all.
-            // So: only the true file-share path uses navigator.share;
-            // every other case (desktop, or mobile without file-share
-            // support) downloads the image + opens WhatsApp with the
-            // text, so the user always has the image to attach.
-            if (
-              isMobile &&
-              navigator.canShare &&
-              navigator.canShare({ files: [file] })
-            ) {
-
-              await navigator.share({
-                title: "Room Booking Confirmed",
-                text: shareText,
-                files: [file],
-              });
-
-            } else {
-
-              // download the image (works on both mobile and desktop)
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.href = url;
-              link.download = "booking-confirmation.png";
-              link.click();
-              URL.revokeObjectURL(url);
-
-              // open WhatsApp (Web on desktop, app on mobile) with the
-              // text - image needs to be attached manually from the
-              // just-downloaded file / gallery
-              window.open(
-                `https://wa.me/?text=${encodeURIComponent(shareText)}`,
-                "_blank"
-              );
-            }
-
-          } catch (err) {
-
-            if (err && err.name === "AbortError") {
-              // user closed the native share sheet - not an error
-              console.log("Share cancelled by user");
-            } else {
-              console.log(err);
-            }
-
-          } finally {
-
-            setConfirmationSharing(false);
-          }
-
-        }, "image/png");
-      });
+      createBookingConfirmationImage(finishShare);
 
     } catch (err) {
 
