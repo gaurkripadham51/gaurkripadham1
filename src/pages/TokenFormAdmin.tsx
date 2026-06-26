@@ -4,7 +4,6 @@
 
 import React, { useState, useRef } from "react";
 import QRCode from "react-qr-code";
-import html2canvas from "html2canvas";
 
 // =======================================
 // AAVASHYAK PUJA SAMAGRI - CATEGORY DATA
@@ -321,70 +320,150 @@ const TokenFormAdmin = () => {
 
 
   // =======================================
+  // CREATE TOKEN SHARE IMAGE
+  // Drawn directly on a <canvas> (no DOM screenshot library) so
+  // there's no dependency on html2canvas - which fails on mobile
+  // when the page uses Tailwind's modern oklch/oklab colors that
+  // html2canvas can't parse. This avoids that error entirely.
+  // =======================================
+
+  const createTokenShareImage = (callback) => {
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = 600;
+    canvas.height = 560;
+
+    // background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // border
+    ctx.strokeStyle = "#fb923c";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    ctx.textAlign = "center";
+
+    // title
+    ctx.fillStyle = "#16a34a";
+    ctx.font = "bold 30px Arial";
+    ctx.fillText("Token Generated", canvas.width / 2, 80);
+
+    // token number label
+    ctx.fillStyle = "#6b7280";
+    ctx.font = "20px Arial";
+    ctx.fillText("Your Token Number", canvas.width / 2, 130);
+
+    // token number
+    ctx.fillStyle = "#ea580c";
+    ctx.font = "bold 52px Arial";
+    ctx.fillText(lastGeneratedToken.token, canvas.width / 2, 200);
+
+    // details
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#374151";
+    ctx.font = "22px Arial";
+
+    const lines = [
+      `Name: ${lastGeneratedToken.name}`,
+      `City: ${lastGeneratedToken.city}`,
+      `Mobile: ${lastGeneratedToken.mobile}`,
+      `Members: ${lastGeneratedToken.members}`,
+      `Date: ${lastGeneratedToken.date}`,
+    ];
+
+    let lineY = 270;
+
+    lines.forEach((line) => {
+      ctx.fillText(line, 60, lineY);
+      lineY += 42;
+    });
+
+    callback(canvas);
+  };
+
+
+
+  // =======================================
   // SHARE GENERATED TOKEN (admin)
-  // Same pattern as TokenForm.jsx's shareToken - image share on
-  // mobile, wa.me text link fallback on desktop. Includes every
-  // detail (name, city, mobile, members, token, date).
+  // Same robust pattern as RoomBookingForm's shareBookingOnWhatsapp -
+  // navigator.share is only used when file-sharing is actually
+  // supported (isMobile + canShare). Every other case (desktop, or
+  // mobile without file-share support) downloads the image and
+  // opens WhatsApp with the text, so the image is never silently
+  // dropped and there's no AbortError on desktop.
   // =======================================
 
   const shareTokenAdmin = async () => {
 
     if (!lastGeneratedToken) return;
 
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const shareText =
+      `Token Generated Successfully\n\n` +
+      `Name: ${lastGeneratedToken.name}\n` +
+      `City: ${lastGeneratedToken.city}\n` +
+      `Mobile: ${lastGeneratedToken.mobile}\n` +
+      `Members: ${lastGeneratedToken.members}\n` +
+      `Token Number: ${lastGeneratedToken.token}\n` +
+      `Date: ${lastGeneratedToken.date}`;
+
     try {
 
-      const isMobile =
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (isMobile) {
-
-        const element =
-          document.getElementById("admin-token-share-card");
-
-        const canvas = await html2canvas(element);
+      createTokenShareImage((canvas) => {
 
         canvas.toBlob(async (blob) => {
 
-          const file = new File(
-            [blob],
-            "token.png",
-            { type: "image/png" }
-          );
+          try {
 
-          if (
-            navigator.canShare &&
-            navigator.canShare({ files: [file] })
-          ) {
+            const file = new File(
+              [blob],
+              "token.png",
+              { type: "image/png" }
+            );
 
-            await navigator.share({
-              title: "Token Generated",
-              text: "Your token has been generated",
-              files: [file],
-            });
+            if (
+              isMobile &&
+              navigator.canShare &&
+              navigator.canShare({ files: [file] })
+            ) {
 
-          } else {
+              await navigator.share({
+                title: "Token Generated",
+                text: shareText,
+                files: [file],
+              });
 
-            alert("Sharing not supported");
+            } else {
+
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "token.png";
+              link.click();
+              URL.revokeObjectURL(url);
+
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+                "_blank"
+              );
+            }
+
+          } catch (err) {
+
+            if (err && err.name === "AbortError") {
+              console.log("Share cancelled by user");
+            } else {
+              console.log(err);
+            }
           }
 
         }, "image/png");
-
-      } else {
-
-        const text =
-          `Token Generated Successfully\n\n` +
-          `Name: ${lastGeneratedToken.name}\n` +
-          `City: ${lastGeneratedToken.city}\n` +
-          `Mobile: ${lastGeneratedToken.mobile}\n` +
-          `Members: ${lastGeneratedToken.members}\n` +
-          `Token Number: ${lastGeneratedToken.token}\n` +
-          `Date: ${lastGeneratedToken.date}`;
-
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(text)}`,
-          "_blank"
-        );
-      }
+      });
 
     } catch (err) {
 

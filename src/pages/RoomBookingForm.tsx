@@ -623,7 +623,7 @@ const RoomBookingForm = () => {
       ctx.textAlign = "center";
       ctx.fillStyle = "#16a34a";
       ctx.font = "bold 16px Arial";
-      ctx.fillText("Donation / दान हेतु स्कैन करें", width / 2, qrLabelY);
+      ctx.fillText("Thank you For Booking!!!", width / 2, qrLabelY);
 
       // QR image (Trust's donation QR - same static image every time),
       // drawn at its own aspect ratio so it isn't stretched/squashed
@@ -642,7 +642,12 @@ const RoomBookingForm = () => {
     };
 
     const qrImg = new Image();
-    qrImg.crossOrigin = "anonymous";
+
+    // NOTE: QR_CODE_IMAGE_PATH is a root-relative path ("/qr-code.png"),
+    // so this image is always same-origin with the app - no crossOrigin
+    // attribute is needed (and setting it can actually make mobile
+    // browsers refuse to load an already-cached copy of the image that
+    // wasn't fetched in CORS mode, which silently drops the QR).
 
     qrImg.onload = () => drawCard(qrImg);
 
