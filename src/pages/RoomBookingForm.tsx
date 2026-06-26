@@ -623,7 +623,7 @@ const RoomBookingForm = () => {
       ctx.textAlign = "center";
       ctx.fillStyle = "#16a34a";
       ctx.font = "bold 16px Arial";
-      ctx.fillText("Thank You for booking!!", width / 2, qrLabelY);
+      ctx.fillText("Donation / दान हेतु स्कैन करें", width / 2, qrLabelY);
 
       // QR image (Trust's donation QR - same static image every time),
       // drawn at its own aspect ratio so it isn't stretched/squashed
@@ -695,9 +695,14 @@ const RoomBookingForm = () => {
             // Desktop/laptop browsers usually have no share targets
             // (no WhatsApp etc registered), so navigator.share() just
             // opens an empty sheet that the user closes -> AbortError.
-            // On desktop, skip straight to: download image + open
-            // WhatsApp Web with the text, so the user can attach
-            // the downloaded image manually.
+            // Some mobile browsers also can't share files via
+            // navigator.share (canShare returns false for the PNG) -
+            // in that case we must NOT fall back to a text-only share,
+            // otherwise the QR image never reaches WhatsApp at all.
+            // So: only the true file-share path uses navigator.share;
+            // every other case (desktop, or mobile without file-share
+            // support) downloads the image + opens WhatsApp with the
+            // text, so the user always has the image to attach.
             if (
               isMobile &&
               navigator.canShare &&
@@ -710,16 +715,9 @@ const RoomBookingForm = () => {
                 files: [file],
               });
 
-            } else if (isMobile && navigator.share) {
-
-              await navigator.share({
-                title: "Room Booking Confirmed",
-                text: shareText,
-              });
-
             } else {
 
-              // download the image
+              // download the image (works on both mobile and desktop)
               const url = URL.createObjectURL(blob);
               const link = document.createElement("a");
               link.href = url;
@@ -727,7 +725,9 @@ const RoomBookingForm = () => {
               link.click();
               URL.revokeObjectURL(url);
 
-              // open WhatsApp Web with the text (image needs manual attach)
+              // open WhatsApp (Web on desktop, app on mobile) with the
+              // text - image needs to be attached manually from the
+              // just-downloaded file / gallery
               window.open(
                 `https://wa.me/?text=${encodeURIComponent(shareText)}`,
                 "_blank"

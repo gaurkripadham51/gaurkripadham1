@@ -50,6 +50,21 @@ const SAMAGRI_CATEGORIES = [
   },
 ];
 
+// returns today's date as "YYYY-MM-DD" (the format <input type="date">
+// expects/returns), used to default the date pickers to today.
+const getTodayInputDate = () => {
+
+  const today = new Date();
+
+  const year = today.getFullYear();
+
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+};
+
 const TokenFormAdmin = () => {
 
   const [selectedDate, setSelectedDate] =
@@ -62,7 +77,7 @@ const TokenFormAdmin = () => {
     useState([]);
 
   const [shareDate, setShareDate] =
-    useState("");
+    useState(getTodayInputDate());
 
   const [generatedLink, setGeneratedLink] =
     useState("");
@@ -87,7 +102,7 @@ const TokenFormAdmin = () => {
     members: "",
   });
 
-  const [tokenDate, setTokenDate] = useState("");
+  const [tokenDate, setTokenDate] = useState(getTodayInputDate());
 
   const [tokenGenLoading, setTokenGenLoading] =
     useState(false);
@@ -284,7 +299,7 @@ const TokenFormAdmin = () => {
           members: "",
         });
 
-        setTokenDate("");
+        setTokenDate(getTodayInputDate());
 
       } else {
 
@@ -515,6 +530,12 @@ const TokenFormAdmin = () => {
 
   const shareOnWhatsapp = async () => {
 
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const shareText =
+      "Scan this QR to generate token";
+
     try {
 
       createQRImage(
@@ -523,40 +544,69 @@ const TokenFormAdmin = () => {
           canvas.toBlob(
             async (blob) => {
 
-              const file =
-                new File(
-                  [blob],
-                  "token-qr.png",
-                  {
-                    type:
-                      "image/png",
-                  }
-                );
+              try {
 
-              if (
-                navigator.canShare &&
-                navigator.canShare({
-                  files: [file],
-                })
-              ) {
+                const file =
+                  new File(
+                    [blob],
+                    "token-qr.png",
+                    {
+                      type:
+                        "image/png",
+                    }
+                  );
 
-                await navigator.share({
+                if (
+                  isMobile &&
+                  navigator.canShare &&
+                  navigator.canShare({
+                    files: [file],
+                  })
+                ) {
 
-                  title:
-                    "Token QR",
+                  await navigator.share({
 
-                  text:
-                    "Scan this QR to generate token",
+                    title:
+                      "Token QR",
 
-                  files: [file],
+                    text: shareText,
 
-                });
+                    files: [file],
 
-              } else {
+                  });
 
-                alert(
-                  "Sharing not supported on this device"
-                );
+                } else if (isMobile && navigator.share) {
+
+                  await navigator.share({
+                    title: "Token QR",
+                    text: shareText,
+                  });
+
+                } else {
+
+                  // desktop - no share targets, so download the
+                  // image and open a wa.me link instead of calling
+                  // navigator.share (which throws AbortError here)
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "token-qr.png";
+                  link.click();
+                  URL.revokeObjectURL(url);
+
+                  window.open(
+                    `https://wa.me/?text=${encodeURIComponent(shareText)}`,
+                    "_blank"
+                  );
+                }
+
+              } catch (err) {
+
+                if (err && err.name === "AbortError") {
+                  console.log("Share cancelled by user");
+                } else {
+                  console.log(err);
+                }
               }
 
             },
@@ -827,6 +877,9 @@ const TokenFormAdmin = () => {
 
     setSamagriSharing(true);
 
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     try {
 
       createSamagriListImage(
@@ -847,6 +900,7 @@ const TokenFormAdmin = () => {
                   );
 
                 if (
+                  isMobile &&
                   navigator.canShare &&
                   navigator.canShare({
                     files: [file],
@@ -865,6 +919,7 @@ const TokenFormAdmin = () => {
                   });
 
                 } else if (
+                  isMobile &&
                   navigator.share
                 ) {
 
@@ -879,19 +934,31 @@ const TokenFormAdmin = () => {
 
                 } else {
 
-                  const url = `https://wa.me/?text=${encodeURIComponent(
-                    buildSamagriShareText()
-                  )}`;
+                  // desktop - no share targets, so download the
+                  // image and open a wa.me link instead of calling
+                  // navigator.share (which throws AbortError here)
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "puja-samagri-list.png";
+                  link.click();
+                  URL.revokeObjectURL(url);
 
                   window.open(
-                    url,
+                    `https://wa.me/?text=${encodeURIComponent(
+                      buildSamagriShareText()
+                    )}`,
                     "_blank"
                   );
                 }
 
               } catch (err) {
 
-                console.log(err);
+                if (err && err.name === "AbortError") {
+                  console.log("Share cancelled by user");
+                } else {
+                  console.log(err);
+                }
 
               } finally {
 
