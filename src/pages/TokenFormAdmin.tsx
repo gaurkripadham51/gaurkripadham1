@@ -287,6 +287,10 @@ const TokenFormAdmin = () => {
           members: tokenForm.members,
           token: data.tokenNumber,
           date: sheetName,
+          // backend sends duplicate:true when this mobile number
+          // already had a token for this date - it returns the
+          // EXISTING token instead of creating a new one.
+          duplicate: Boolean(data.duplicate),
         });
 
         setShowTokenPopup(true);
@@ -896,14 +900,14 @@ const TokenFormAdmin = () => {
     // content
     let y = 160;
 
-    ctx.textAlign = "right";
+    ctx.textAlign = "left";
 
     selectedSamagriData.forEach((cat) => {
 
       ctx.fillStyle = "#c2410c";
       ctx.font = "bold 24px Arial";
 
-      ctx.fillText(cat.title, width - 40, y);
+      ctx.fillText(cat.title, 40, y);
 
       y += headingGap;
 
@@ -916,7 +920,7 @@ const TokenFormAdmin = () => {
           item.qty ? "   —   " + item.qty : ""
         }`;
 
-        ctx.fillText(line, width - 60, y);
+        ctx.fillText(line, 60, y);
 
         y += lineHeight;
       });
@@ -929,7 +933,7 @@ const TokenFormAdmin = () => {
     ctx.font = "18px Arial";
 
     ctx.fillText(
-      "होम डिलिवरी: वायु पुत्र पूजा की दुकान",
+      "Jai Shree Ram",
       width / 2,
       y + 20
     );
@@ -1610,8 +1614,16 @@ const TokenFormAdmin = () => {
             </div>
 
             <h2 className="text-2xl font-bold text-green-600">
-              Token Generated
+              {lastGeneratedToken.duplicate
+                ? "Token Already Generated"
+                : "Token Generated"}
             </h2>
+
+            {lastGeneratedToken.duplicate && (
+              <p className="mt-2 text-red-600 font-semibold">
+                Aapka token already generate ho chuka hai
+              </p>
+            )}
 
             <p className="mt-4 text-gray-600">
               Your Token Number

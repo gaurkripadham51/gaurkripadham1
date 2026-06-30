@@ -28,6 +28,12 @@ const TokenForm = () => {
   const [showPopup, setShowPopup] =
     useState(false);
 
+  // true when the backend found this mobile number already had a
+  // token for this date, and returned the EXISTING token instead of
+  // creating a new one - used to swap the popup's title/message.
+  const [isDuplicateToken, setIsDuplicateToken] =
+    useState(false);
+
   const [searchMobile, setSearchMobile] =
     useState("");
 
@@ -311,6 +317,10 @@ const TokenForm = () => {
 
         setToken(
           data.tokenNumber
+        );
+
+        setIsDuplicateToken(
+          Boolean(data.duplicate)
         );
 
         setShowPopup(true);
@@ -648,8 +658,16 @@ const TokenForm = () => {
             </div>
 
             <h2 className="text-2xl font-bold text-green-600">
-              Token Generated
+              {isDuplicateToken
+                ? "Token Already Generated"
+                : "Token Generated"}
             </h2>
+
+            {isDuplicateToken && (
+              <p className="mt-2 text-red-600 font-semibold">
+                Aapka token already generate ho chuka hai
+              </p>
+            )}
 
             <p className="mt-4 text-gray-600">
               Your Token Number
@@ -672,6 +690,8 @@ const TokenForm = () => {
                 onClick={() => {
 
                   setShowPopup(false);
+
+                  setIsDuplicateToken(false);
 
                   setForm({
                     name: "",
