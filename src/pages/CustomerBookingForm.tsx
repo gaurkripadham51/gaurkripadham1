@@ -34,6 +34,10 @@ const dataUrlToBlob = (dataUrl) => {
   return new Blob([bytes], { type: mime });
 };
 
+// Standard check-in / check-out times shown alongside the dates
+const CHECKIN_TIME_LABEL = "12:00 AM";
+const CHECKOUT_TIME_LABEL = "11:00 AM";
+
 // Trust's donation QR code (static image) - same QR used on the
 // admin RoomBookingForm confirmation share. PASTE YOUR ORIGINAL
 // base64 string here (copy it from RoomBookingForm.jsx's
@@ -296,8 +300,8 @@ const CustomerBookingForm = () => {
       const lines = [
         `Name: ${bookingResult.name}`,
         `Mobile: ${bookingResult.mobile}`,
-        `Check-in: ${bookingResult.checkIn}`,
-        `Check-out: ${bookingResult.checkOut}`,
+        `Check-in: ${bookingResult.checkIn} ${CHECKIN_TIME_LABEL}`,
+        `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}`,
       ];
 
       let y = 200;
@@ -393,8 +397,8 @@ const CustomerBookingForm = () => {
     const shareText =
       `🙏 Room Booking Request Received\n` +
       `Name: ${bookingResult.name}\n` +
-      `Check-in: ${bookingResult.checkIn}\n` +
-      `Check-out: ${bookingResult.checkOut}\n` +
+      `Check-in: ${bookingResult.checkIn} ${CHECKIN_TIME_LABEL}\n` +
+      `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}\n` +
       (bookingResult.bookingId
         ? `Booking ID: ${bookingResult.bookingId}\n`
         : "") +
@@ -694,7 +698,11 @@ const CustomerBookingForm = () => {
             </p>
 
             <p className="text-gray-700">
-              {bookingResult.checkIn} to {bookingResult.checkOut}
+              Check-in: {bookingResult.checkIn} {CHECKIN_TIME_LABEL}
+            </p>
+
+            <p className="text-gray-700">
+              Check-out: {bookingResult.checkOut} {CHECKOUT_TIME_LABEL}
             </p>
 
             {bookingResult.bookingId && (
@@ -707,15 +715,31 @@ const CustomerBookingForm = () => {
               Booking confirm payment के बाद होगी।
             </p>
 
-            <button
-              onClick={shareBookingOnWhatsapp}
-              disabled={confirmationSharing}
-              className="mt-4 w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 rounded-md font-semibold"
-            >
-              {confirmationSharing
-                ? "तैयार हो रहा है..."
-                : "📤 Share on WhatsApp"}
-            </button>
+            <div className="mt-5 bg-white border border-green-300 rounded-xl p-4 inline-block">
+
+              <p className="text-green-700 font-bold text-sm mb-3">
+                Payment के लिए QR स्कैन करें
+              </p>
+
+              <img
+                src={QR_CODE_IMAGE_PATH}
+                alt="Payment QR Code"
+                className="w-48 h-auto mx-auto rounded-md"
+              />
+
+            </div>
+
+            <div>
+              <button
+                onClick={shareBookingOnWhatsapp}
+                disabled={confirmationSharing}
+                className="mt-5 w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 rounded-md font-semibold"
+              >
+                {confirmationSharing
+                  ? "तैयार हो रहा है..."
+                  : "📤 Share on WhatsApp"}
+              </button>
+            </div>
 
             <canvas
               ref={bookingCanvasRef}
