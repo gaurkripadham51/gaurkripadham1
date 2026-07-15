@@ -1803,6 +1803,7 @@ const RoomBookingForm = () => {
 
                 <thead>
                   <tr className="bg-orange-100">
+                    <th className="border p-2">Booking ID</th>
                     <th className="border p-2">Name</th>
                     <th className="border p-2">Mobile</th>
                     <th className="border p-2">Room</th>
@@ -1822,6 +1823,9 @@ const RoomBookingForm = () => {
 
                       <tr key={idx} className="hover:bg-orange-50">
 
+                        <td className="border p-2 text-gray-500 text-[11px] whitespace-nowrap">
+                          {b.bookingId}
+                        </td>
                         <td className="border p-2">{b.name}</td>
                         <td className="border p-2">{b.mobile}</td>
                         <td className="border p-2 font-semibold">
@@ -1908,7 +1912,7 @@ const RoomBookingForm = () => {
                   ) : (
 
                     <tr>
-                      <td colSpan="8" className="text-center p-5">
+                      <td colSpan="9" className="text-center p-5">
                         No Bookings Found
                       </td>
                     </tr>

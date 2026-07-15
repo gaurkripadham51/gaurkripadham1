@@ -35,8 +35,220 @@ const dataUrlToBlob = (dataUrl) => {
 };
 
 // Standard check-in / check-out times shown alongside the dates
-const CHECKIN_TIME_LABEL = "12:00 AM";
+const CHECKIN_TIME_LABEL = "12:00 PM";
 const CHECKOUT_TIME_LABEL = "11:00 AM";
+
+// =======================================
+// formatDateDDMMYYYY - converts a "YYYY-MM-DD" string (what the
+// <input type="date"> and backend both use) into "DD-MM-YYYY" for
+// display anywhere the user actually sees a date. The underlying
+// <input type="date"> values themselves stay "YYYY-MM-DD" - that's
+// an HTML requirement and can't be changed - only the DISPLAYED
+// text (confirmation card, shared image, WhatsApp text, status
+// table) is reformatted.
+// =======================================
+
+const formatDateDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  const parts = String(dateStr).split("T")[0].split("-");
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  return `${d}-${m}-${y}`;
+};
+
+// Today's date as "YYYY-MM-DD", used as the min value on date
+// pickers so past dates can't be selected.
+const getTodayDateString = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+// =======================================
+// CustomDatePicker - a small dependency-free date picker so the
+// visible field/calendar always shows DD-MM-YYYY (the native
+// <input type="date"> can't be forced into a fixed display format -
+// it always follows the browser/OS locale). Internally it still
+// stores/reports the value as "YYYY-MM-DD" (via onChange) so the
+// rest of the form / backend payload is unaffected.
+// =======================================
+
+const parseYMD = (str) => {
+  if (!str) return null;
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+const toYMD = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+const CustomDatePicker = ({ value, onChange, minDate, placeholder }) => {
+
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  const selectedDate = parseYMD(value);
+  const minD = parseYMD(minDate) || new Date(1970, 0, 1);
+
+  const [viewDate, setViewDate] = useState(selectedDate || minD);
+
+  useEffect(() => {
+    if (selectedDate) setViewDate(selectedDate);
+  }, [value]);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const isBeforeMin = (date) => {
+    const a = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const b = new Date(minD.getFullYear(), minD.getMonth(), minD.getDate());
+    return a < b;
+  };
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+
+  const firstDayOfMonth = new Date(year, month, 1);
+  const startWeekday = firstDayOfMonth.getDay(); // 0 = Sunday
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const goPrevMonth = () => setViewDate(new Date(year, month - 1, 1));
+  const goNextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+  // Don't allow navigating to a month that's entirely before minDate.
+  const prevDisabled =
+    year < minD.getFullYear() ||
+    (year === minD.getFullYear() && month <= minD.getMonth());
+
+  const handleSelectDay = (d) => {
+    const picked = new Date(year, month, d);
+    if (isBeforeMin(picked)) return;
+    onChange(toYMD(picked));
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={wrapRef}>
+
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="border rounded-md px-3 py-2 w-full mt-1 text-left bg-white flex justify-between items-center"
+      >
+        <span className={value ? "text-gray-800" : "text-gray-400"}>
+          {value ? formatDateDDMMYYYY(value) : (placeholder || "DD-MM-YYYY")}
+        </span>
+        <span className="text-gray-400">📅</span>
+      </button>
+
+      {open && (
+
+        <div className="absolute z-50 mt-1 bg-white border rounded-lg shadow-lg p-3 w-64">
+
+          <div className="flex items-center justify-between mb-2">
+
+            <button
+              type="button"
+              onClick={goPrevMonth}
+              disabled={prevDisabled}
+              className="px-2 py-1 rounded disabled:opacity-30 hover:bg-orange-100"
+            >
+              ‹
+            </button>
+
+            <span className="text-sm font-semibold text-gray-800">
+              {MONTH_NAMES[month]} {year}
+            </span>
+
+            <button
+              type="button"
+              onClick={goNextMonth}
+              className="px-2 py-1 rounded hover:bg-orange-100"
+            >
+              ›
+            </button>
+
+          </div>
+
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {DAY_NAMES.map((d) => (
+              <div
+                key={d}
+                className="text-center text-xs text-gray-400 font-medium"
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-7 gap-1">
+
+            {cells.map((d, idx) => {
+
+              if (d === null) return <div key={idx} />;
+
+              const cellDate = new Date(year, month, d);
+              const disabled = isBeforeMin(cellDate);
+
+              const isSelected =
+                selectedDate &&
+                selectedDate.getFullYear() === year &&
+                selectedDate.getMonth() === month &&
+                selectedDate.getDate() === d;
+
+              return (
+                <button
+                  type="button"
+                  key={idx}
+                  disabled={disabled}
+                  onClick={() => handleSelectDay(d)}
+                  className={`text-sm py-1 rounded ${
+                    disabled
+                      ? "text-gray-300 cursor-not-allowed"
+                      : isSelected
+                      ? "bg-orange-600 text-white"
+                      : "hover:bg-orange-100 text-gray-700"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+
+            })}
+
+          </div>
+
+        </div>
+
+      )}
+
+    </div>
+  );
+};
 
 // Trust's donation QR code (static image) - same QR used on the
 // admin RoomBookingForm confirmation share. PASTE YOUR ORIGINAL
@@ -132,22 +344,22 @@ const CustomerBookingForm = () => {
   const submitBookingRequest = async () => {
 
     if (!checkIn || !checkOut) {
-      setErrorModal("Check-in और Check-out date चुनें");
+      setErrorModal("Please select Check-in and Check-out dates");
       return;
     }
 
     if (new Date(checkOut) <= new Date(checkIn)) {
-      setErrorModal("Check-out date, Check-in date के बाद की होनी चाहिए");
+      setErrorModal("Check-out date must be after Check-in date");
       return;
     }
 
     if (!name || !mobile || !gender) {
-      setErrorModal("Name, Gender और Mobile Number भरें");
+      setErrorModal("Please fill Name, Gender and Mobile Number");
       return;
     }
 
     if (mobile.length !== 10) {
-      setErrorModal("सही 10 digit Mobile Number डालें");
+      setErrorModal("Please enter a valid 10 digit Mobile Number");
       return;
     }
 
@@ -157,7 +369,7 @@ const CustomerBookingForm = () => {
       (Number(child) || 0);
 
     if (totalGuests <= 0) {
-      setErrorModal("कम से कम 1 Guest की details भरें");
+      setErrorModal("Please fill details for at least 1 guest");
       return;
     }
 
@@ -306,8 +518,8 @@ const CustomerBookingForm = () => {
       const lines = [
         `Name: ${bookingResult.name}`,
         `Mobile: ${bookingResult.mobile}`,
-        `Check-in: ${bookingResult.checkIn} ${CHECKIN_TIME_LABEL}`,
-        `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}`,
+        `Check-in: ${formatDateDDMMYYYY(bookingResult.checkIn)} ${CHECKIN_TIME_LABEL}`,
+        `Check-out: ${formatDateDDMMYYYY(bookingResult.checkOut)} ${CHECKOUT_TIME_LABEL}`,
       ];
 
       let y = 200;
@@ -335,7 +547,7 @@ const CustomerBookingForm = () => {
       ctx.fillStyle = "#c2410c";
       ctx.font = "bold 18px Arial";
       ctx.fillText(
-        "Booking confirm payment के बाद होगी",
+        "Booking will be confirmed after payment",
         width / 2,
         noteY
       );
@@ -343,7 +555,7 @@ const CustomerBookingForm = () => {
       // QR label
       ctx.fillStyle = "#16a34a";
       ctx.font = "bold 16px Arial";
-      ctx.fillText("Payment के लिए QR स्कैन करें", width / 2, qrLabelY);
+      ctx.fillText("Scan QR to Pay", width / 2, qrLabelY);
 
       // QR image (Trust's donation QR - same static image every time),
       // drawn at its own aspect ratio so it isn't stretched/squashed
@@ -403,12 +615,12 @@ const CustomerBookingForm = () => {
     const shareText =
       `🙏 Room Booking Request Received\n` +
       `Name: ${bookingResult.name}\n` +
-      `Check-in: ${bookingResult.checkIn} ${CHECKIN_TIME_LABEL}\n` +
-      `Check-out: ${bookingResult.checkOut} ${CHECKOUT_TIME_LABEL}\n` +
+      `Check-in: ${formatDateDDMMYYYY(bookingResult.checkIn)} ${CHECKIN_TIME_LABEL}\n` +
+      `Check-out: ${formatDateDDMMYYYY(bookingResult.checkOut)} ${CHECKOUT_TIME_LABEL}\n` +
       (bookingResult.bookingId
         ? `Booking ID: ${bookingResult.bookingId}\n`
         : "") +
-      `Booking confirm payment के बाद होगी`;
+      `Booking will be confirmed after payment`;
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -503,7 +715,7 @@ const CustomerBookingForm = () => {
   const checkBookingStatus = async () => {
 
     if (!statusBookingId.trim()) {
-      setErrorModal("Booking ID डालें");
+      setErrorModal("Please enter a Booking ID");
       return;
     }
 
@@ -527,7 +739,7 @@ const CustomerBookingForm = () => {
 
       } else {
 
-        setErrorModal(data.message || "Booking status नहीं मिल पाया");
+        setErrorModal(data.message || "Could not fetch booking status");
       }
 
     } catch (err) {
@@ -579,11 +791,16 @@ const CustomerBookingForm = () => {
                   <label className="text-sm font-medium text-gray-700">
                     Check-in Date
                   </label>
-                  <input
-                    type="date"
+                  <CustomDatePicker
                     value={checkIn}
-                    onChange={(e) => setCheckIn(e.target.value)}
-                    className="border rounded-md px-3 py-2 w-full mt-1"
+                    onChange={(val) => {
+                      setCheckIn(val);
+                      if (checkOut && new Date(checkOut) <= new Date(val)) {
+                        setCheckOut("");
+                      }
+                    }}
+                    minDate={getTodayDateString()}
+                    placeholder="DD-MM-YYYY"
                   />
                 </div>
 
@@ -591,11 +808,11 @@ const CustomerBookingForm = () => {
                   <label className="text-sm font-medium text-gray-700">
                     Check-out Date
                   </label>
-                  <input
-                    type="date"
+                  <CustomDatePicker
                     value={checkOut}
-                    onChange={(e) => setCheckOut(e.target.value)}
-                    className="border rounded-md px-3 py-2 w-full mt-1"
+                    onChange={(val) => setCheckOut(val)}
+                    minDate={checkIn || getTodayDateString()}
+                    placeholder="DD-MM-YYYY"
                   />
                 </div>
 
@@ -710,7 +927,7 @@ const CustomerBookingForm = () => {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700">
-                    Child
+                    Child (0-10 Years)
                   </label>
                   <input
                     type="number"
@@ -731,7 +948,7 @@ const CustomerBookingForm = () => {
               disabled={submitting}
               className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-8 py-3 rounded-md font-semibold text-lg"
             >
-              {submitting ? "Booking हो रही है..." : "Book Now"}
+              {submitting ? "Booking in progress..." : "Book Now"}
             </button>
 
           </>
@@ -757,11 +974,11 @@ const CustomerBookingForm = () => {
             </p>
 
             <p className="text-gray-700">
-              Check-in: {bookingResult.checkIn} {CHECKIN_TIME_LABEL}
+              Check-in: {formatDateDDMMYYYY(bookingResult.checkIn)} {CHECKIN_TIME_LABEL}
             </p>
 
             <p className="text-gray-700">
-              Check-out: {bookingResult.checkOut} {CHECKOUT_TIME_LABEL}
+              Check-out: {formatDateDDMMYYYY(bookingResult.checkOut)} {CHECKOUT_TIME_LABEL}
             </p>
 
             {bookingResult.bookingId && (
@@ -771,13 +988,13 @@ const CustomerBookingForm = () => {
             )}
 
             <p className="text-orange-700 font-medium text-sm mt-4">
-              Booking confirm payment के बाद होगी।
+              Booking will be confirmed after payment.
             </p>
 
             <div className="mt-5 bg-white border border-green-300 rounded-xl p-4 inline-block">
 
               <p className="text-green-700 font-bold text-sm mb-3">
-                Payment के लिए QR स्कैन करें
+                Scan QR to Pay
               </p>
 
               <img
@@ -795,7 +1012,7 @@ const CustomerBookingForm = () => {
                 className="mt-5 w-full sm:w-auto bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white px-6 py-2 rounded-md font-semibold"
               >
                 {confirmationSharing
-                  ? "तैयार हो रहा है..."
+                  ? "Preparing..."
                   : "📤 Share on WhatsApp"}
               </button>
             </div>
@@ -831,23 +1048,23 @@ const CustomerBookingForm = () => {
           <ul className="text-xs sm:text-sm text-gray-700 space-y-1 list-disc list-inside">
 
             <li>
-              Check-in से <span className="font-semibold">48 hours पहले</span>{" "}
-              cancel करने पर <span className="font-semibold">full refund</span>{" "}
-              मिलेगा।
+              If cancelled <span className="font-semibold">48 hours before</span>{" "}
+              Check-in, a <span className="font-semibold">full refund</span>{" "}
+              will be given.
             </li>
 
             <li>
-              Check-in से{" "}
-              <span className="font-semibold">48 से 24 hours</span> के बीच
-              cancel करने पर{" "}
-              <span className="font-semibold">50% refund</span> मिलेगा।
+              If cancelled{" "}
+              <span className="font-semibold">between 48 and 24 hours</span>{" "}
+              before Check-in, a{" "}
+              <span className="font-semibold">50% refund</span> will be given.
             </li>
 
             <li>
-              Check-in से{" "}
-              <span className="font-semibold">24 hours के अंदर</span> cancel
-              करने पर <span className="font-semibold">कोई refund नहीं</span>{" "}
-              मिलेगा।
+              If cancelled{" "}
+              <span className="font-semibold">within 24 hours</span> of
+              Check-in, <span className="font-semibold">no refund</span>{" "}
+              will be given.
             </li>
 
           </ul>
@@ -873,7 +1090,7 @@ const CustomerBookingForm = () => {
               value={statusBookingId}
               onChange={(e) => setStatusBookingId(e.target.value)}
               className="border rounded-md px-4 py-2 w-full"
-              placeholder="अपना Booking ID डालें (जैसे BK1234567890)"
+              placeholder="Enter your Booking ID (e.g. BK1234567890)"
             />
 
             <button
@@ -936,11 +1153,11 @@ const CustomerBookingForm = () => {
                           <td className="border p-2">{b.name}</td>
 
                           <td className="border p-2">
-                            {String(b.checkIn).split("T")[0]}
+                            {formatDateDDMMYYYY(b.checkIn)}
                           </td>
 
                           <td className="border p-2">
-                            {String(b.checkOut).split("T")[0]}
+                            {formatDateDDMMYYYY(b.checkOut)}
                           </td>
 
                           <td className="border p-2 font-semibold">
@@ -971,7 +1188,7 @@ const CustomerBookingForm = () => {
 
                     <tr>
                       <td colSpan="5" className="text-center p-5">
-                        इस Booking ID पर कोई Booking नहीं मिली
+                        No booking found for this Booking ID
                       </td>
                     </tr>
 
@@ -1011,7 +1228,7 @@ const CustomerBookingForm = () => {
               onClick={() => setErrorModal("")}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-md font-semibold"
             >
-              ठीक है
+              OK
             </button>
 
           </div>
