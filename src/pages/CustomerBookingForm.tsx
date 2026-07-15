@@ -70,6 +70,12 @@ const CustomerBookingForm = () => {
   const [bookingResult, setBookingResult] = useState(null);
   const [errorModal, setErrorModal] = useState("");
 
+  // ---- check booking status (customer-facing, read-only) ----
+  const [statusBookingId, setStatusBookingId] = useState("");
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusBookings, setStatusBookings] = useState([]);
+  const [statusSearched, setStatusSearched] = useState(false);
+
   // ---- canvas used to build the booking-confirmation share image ----
   const bookingCanvasRef = useRef(null);
   const [confirmationSharing, setConfirmationSharing] = useState(false);
@@ -484,6 +490,59 @@ const CustomerBookingForm = () => {
 
 
 
+  // =======================================
+  // CHECK YOUR BOOKING STATUS (read-only, no actions)
+  // Searches by Booking ID - assumes backend action
+  // "checkBookingStatus" accepts ?bookingId=BKxxxxxxxxxx and returns
+  // { success, bookings: [{ name, mobile, checkIn, checkOut,
+  // roomNumber, status, bookingId }, ...] }.
+  // ⚠️ CONFIRM this action name / param matches your Apps Script -
+  // adjust the URL below if yours is named differently.
+  // =======================================
+
+  const checkBookingStatus = async () => {
+
+    if (!statusBookingId.trim()) {
+      setErrorModal("Booking ID डालें");
+      return;
+    }
+
+    setStatusLoading(true);
+    setStatusSearched(false);
+
+    try {
+
+      const response = await fetch(
+        `${API_URL}?action=checkBookingStatus&bookingId=${encodeURIComponent(
+          statusBookingId.trim()
+        )}`
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+
+        setStatusBookings(data.bookings || []);
+        setStatusSearched(true);
+
+      } else {
+
+        setErrorModal(data.message || "Booking status नहीं मिल पाया");
+      }
+
+    } catch (err) {
+
+      console.log(err);
+      setErrorModal("Something went wrong");
+
+    } finally {
+
+      setStatusLoading(false);
+    }
+  };
+
+
+
   return (
 
     <div className="min-h-screen bg-orange-50 flex justify-center px-3 py-6 sm:px-4 sm:py-10">
@@ -792,6 +851,139 @@ const CustomerBookingForm = () => {
             </li>
 
           </ul>
+
+        </div>
+
+
+
+        {/* ======================================= */}
+        {/* CHECK YOUR BOOKING STATUS (read-only) */}
+        {/* ======================================= */}
+
+        <div className="mt-6 bg-orange-50 border rounded-2xl p-4 sm:p-6">
+
+          <h2 className="text-lg sm:text-xl font-bold text-orange-600 mb-5">
+            Check Your Booking Status
+          </h2>
+
+          <div className="flex flex-col md:flex-row gap-4">
+
+            <input
+              type="text"
+              value={statusBookingId}
+              onChange={(e) => setStatusBookingId(e.target.value)}
+              className="border rounded-md px-4 py-2 w-full"
+              placeholder="अपना Booking ID डालें (जैसे BK1234567890)"
+            />
+
+            <button
+              onClick={checkBookingStatus}
+              disabled={statusLoading}
+              className="bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white px-6 py-2 rounded-md whitespace-nowrap"
+            >
+              {statusLoading ? "Checking..." : "Check Status"}
+            </button>
+
+          </div>
+
+          {statusSearched && (
+
+            <div className="overflow-auto rounded-xl border bg-white mt-5">
+
+              <table className="w-full border-collapse text-xs sm:text-sm">
+
+                <thead>
+                  <tr className="bg-orange-100">
+                    <th className="border p-2">Name</th>
+                    <th className="border p-2">Check-in</th>
+                    <th className="border p-2">Check-out</th>
+                    <th className="border p-2">Room</th>
+                    <th className="border p-2">Status</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {statusBookings.length > 0 ? (
+
+                    statusBookings.map((b, idx) => {
+
+                      const isUnassigned =
+                        !b.roomNumber || String(b.roomNumber) === "0";
+
+                      // "status" is your internal Active/Cancelled/
+                      // Completed value from the sheet - shown as-is
+                      // when it's Cancelled/Completed, otherwise
+                      // derived from whether a room is assigned yet.
+                      let displayStatus = "Booked";
+                      let statusColor = "bg-green-100 text-green-700";
+
+                      if (b.status === "Cancelled") {
+                        displayStatus = "Cancelled";
+                        statusColor = "bg-red-100 text-red-700";
+                      } else if (b.status === "Completed") {
+                        displayStatus = "Completed";
+                        statusColor = "bg-gray-100 text-gray-600";
+                      } else if (isUnassigned) {
+                        displayStatus = "Not Confirmed";
+                        statusColor = "bg-orange-100 text-orange-700";
+                      }
+
+                      return (
+
+                        <tr key={idx} className="hover:bg-orange-50">
+
+                          <td className="border p-2">{b.name}</td>
+
+                          <td className="border p-2">
+                            {String(b.checkIn).split("T")[0]}
+                          </td>
+
+                          <td className="border p-2">
+                            {String(b.checkOut).split("T")[0]}
+                          </td>
+
+                          <td className="border p-2 font-semibold">
+                            {isUnassigned ? (
+                              <span className="text-orange-600 text-xs font-medium">
+                                Unassigned
+                              </span>
+                            ) : (
+                              b.roomNumber
+                            )}
+                          </td>
+
+                          <td className="border p-2">
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-medium ${statusColor}`}
+                            >
+                              {displayStatus}
+                            </span>
+                          </td>
+
+                        </tr>
+
+                      );
+
+                    })
+
+                  ) : (
+
+                    <tr>
+                      <td colSpan="5" className="text-center p-5">
+                        इस Booking ID पर कोई Booking नहीं मिली
+                      </td>
+                    </tr>
+
+                  )}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          )}
 
         </div>
 
