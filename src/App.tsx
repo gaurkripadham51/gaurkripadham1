@@ -22,7 +22,7 @@ import TokenForm from './pages/TokenForm';
 import TokenFormAdmin from './pages/TokenFormAdmin';
 import FeedbackForm from './pages/FeedbackForm';
 import RoomBookingForm from './pages/RoomBookingForm';
-RoomBookingForm
+import CustomerBookingForm from './pages/CustomerBookingForm';
 
 function App() {
   return (
@@ -48,9 +48,9 @@ function App() {
           <Route path="/TokenFormAdmin" element={<TokenFormAdmin />} />
           <Route path="/FeedbackForm" element={<FeedbackForm />} />
           <Route path="/RoomBookingForm" element={<RoomBookingForm />} />
+          <Route path="/CustomerBookingForm" element={<CustomerBookingForm />} />
         <Route path="/book/:bookId" element={<BookIndex />} />
         <Route path="/book/:bookId/page/:pageId" element={<PageText />} />
-        RoomBookingForm
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />
